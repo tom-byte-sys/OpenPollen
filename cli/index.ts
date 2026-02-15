@@ -2,13 +2,21 @@
 
 import { Command } from 'commander';
 import { createInterface } from 'node:readline';
-import { existsSync, mkdirSync, writeFileSync, readFileSync, watchFile, statSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, mkdirSync, writeFileSync, readFileSync, watchFile, statSync, readdirSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
 import { homedir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { createHiveAgent } from '../src/index.js';
 import { loadConfig } from '../src/config/loader.js';
 import { SkillManager } from '../src/agent/skill-manager.js';
 import { maskSecret } from '../src/utils/crypto.js';
+
+// 获取内置技能目录路径（相对于 CLI 入口）
+function getBuiltinSkillsDir(): string {
+  const cliDir = dirname(fileURLToPath(import.meta.url));
+  // dist/cli/ → 项目根/skills/
+  return resolve(cliDir, '..', '..', 'skills');
+}
 
 const program = new Command();
 
@@ -39,8 +47,14 @@ program
       }
       console.log('');
 
-      // 优雅关闭
+      // 优雅关闭（防止重复调用）
+      let stopping = false;
       const shutdown = async () => {
+        if (stopping) {
+          console.log('\n强制退出...');
+          process.exit(1);
+        }
+        stopping = true;
         console.log('\n正在停止...');
         await hub.stop();
         process.exit(0);
@@ -161,7 +175,35 @@ program
       console.log(`  技能目录已创建: ${skillsDir}`);
     }
 
-    // 6. 创建日志目录
+    // 6. 安装内置技能
+    const builtinDir = getBuiltinSkillsDir();
+    if (existsSync(builtinDir)) {
+      const builtinSkills = readdirSync(builtinDir, { withFileTypes: true })
+        .filter(e => e.isDirectory())
+        .map(e => e.name);
+
+      if (builtinSkills.length > 0) {
+        const installBuiltin = (await ask(`\n是否安装内置技能 (${builtinSkills.join(', ')})? (Y/n): `)).toLowerCase() !== 'n';
+        if (installBuiltin) {
+          const manager = new SkillManager(skillsDir);
+          for (const name of builtinSkills) {
+            const skillPath = resolve(builtinDir, name);
+            try {
+              if (!existsSync(resolve(skillsDir, name))) {
+                manager.installFromLocal(skillPath);
+                console.log(`  已安装技能: ${name}`);
+              } else {
+                console.log(`  技能已存在: ${name} (跳过)`);
+              }
+            } catch (error) {
+              console.error(`  安装技能 ${name} 失败:`, error instanceof Error ? error.message : error);
+            }
+          }
+        }
+      }
+    }
+
+    // 7. 创建日志目录
     const logsDir = resolve(homedir(), '.hiveagent', 'logs');
     if (!existsSync(logsDir)) {
       mkdirSync(logsDir, { recursive: true });

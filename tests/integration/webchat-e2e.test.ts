@@ -7,8 +7,8 @@ import { SkillManager } from '../../src/agent/skill-manager.js';
 import { GatewayServer } from '../../src/gateway/server.js';
 import type { AppConfig } from '../../src/config/schema.js';
 
-// Mock SDK unavailable
-vi.mock('@anthropic-ai/claude-code', () => {
+// Mock SDK unavailable (force API fallback mode in tests)
+vi.mock('@anthropic-ai/claude-agent-sdk', () => {
   throw new Error('SDK not available');
 });
 

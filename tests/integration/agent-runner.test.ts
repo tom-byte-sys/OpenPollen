@@ -5,7 +5,7 @@ import type { Session } from '../../src/gateway/session.js';
 import type { AppConfig } from '../../src/config/schema.js';
 
 // Mock the Claude Agent SDK to be unavailable (so tests use API fallback)
-vi.mock('@anthropic-ai/claude-code', () => {
+vi.mock('@anthropic-ai/claude-agent-sdk', () => {
   throw new Error('SDK not available');
 });
 

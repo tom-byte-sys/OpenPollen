@@ -38,6 +38,7 @@ export class GatewayServer {
   async stop(): Promise<void> {
     return new Promise((resolve) => {
       if (this.httpServer) {
+        this.httpServer.closeAllConnections();
         this.httpServer.close(() => {
           log.info('Gateway HTTP 服务已停止');
           resolve();
@@ -137,9 +138,11 @@ export class GatewayServer {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ response }));
     } catch (error) {
-      log.error({ error }, 'HTTP 聊天请求处理失败');
+      const errMsg = error instanceof Error ? error.message : String(error);
+      const errStack = error instanceof Error ? error.stack : undefined;
+      log.error({ error: errMsg, stack: errStack }, 'HTTP 聊天请求处理失败');
       res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: '内部服务器错误' }));
+      res.end(JSON.stringify({ error: '内部服务器错误', detail: errMsg }));
     }
   }
 }

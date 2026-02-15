@@ -96,13 +96,13 @@ export function loadConfig(explicitPath?: string): AppConfig {
     throw new Error(`配置校验失败:\n${details}`);
   }
 
-  // 展开路径中的 ~
+  // 展开路径中的 ~ 并将相对路径 resolve 为绝对路径
   const config = merged as AppConfig;
-  config.skills.directory = expandHome(config.skills.directory);
-  config.memory.sqlitePath = expandHome(config.memory.sqlitePath);
-  config.memory.fileDirectory = expandHome(config.memory.fileDirectory);
+  config.skills.directory = resolve(expandHome(config.skills.directory));
+  config.memory.sqlitePath = resolve(expandHome(config.memory.sqlitePath));
+  config.memory.fileDirectory = resolve(expandHome(config.memory.fileDirectory));
   if (config.logging.file) {
-    config.logging.file = expandHome(config.logging.file);
+    config.logging.file = resolve(expandHome(config.logging.file));
   }
 
   return config;

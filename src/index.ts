@@ -26,10 +26,11 @@ export async function createHiveAgent(configPath?: string): Promise<HiveAgentIns
   // 1. 加载配置
   const config = loadConfig(configPath);
 
-  // 2. 初始化日志
+  // 2. 初始化日志（仅写文件，不输出到终端；用户通过 hiveagent logs -f 查看）
   const log = initLogger({
     level: config.logging.level,
     file: config.logging.file,
+    stdout: false,
   });
   const mainLog = getLogger('main');
 

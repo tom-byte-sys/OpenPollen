@@ -222,6 +222,51 @@ export class SkillManager {
   }
 
   /**
+   * 获取技能的完整 SKILL.md 内容
+   */
+  getSkillContent(name: string): string | null {
+    const skill = this.skills.get(name);
+    if (!skill) return null;
+
+    const skillMdPath = join(skill.directory, 'SKILL.md');
+    if (!existsSync(skillMdPath)) return null;
+
+    return readFileSync(skillMdPath, 'utf-8');
+  }
+
+  /**
+   * 将所有技能内容合并为系统提示的一部分
+   */
+  buildSkillsPrompt(): string {
+    const skills = this.list();
+    if (skills.length === 0) return '';
+
+    const parts: string[] = [
+      '\n\n## Available Skills',
+      'The following skills are available. When a user request matches a skill, follow its instructions.',
+      '',
+    ];
+
+    for (const skill of skills) {
+      const content = this.getSkillContent(skill.name);
+      if (!content) continue;
+
+      // 去掉 frontmatter，只保留正文
+      const body = content.replace(/^---\n[\s\S]*?\n---\n*/, '').trim();
+      parts.push(`### Skill: ${skill.name}`);
+      parts.push(`**Description:** ${skill.description}`);
+      if (skill.allowedTools) {
+        parts.push(`**Allowed tools:** ${skill.allowedTools}`);
+      }
+      parts.push('');
+      parts.push(body);
+      parts.push('');
+    }
+
+    return parts.join('\n');
+  }
+
+  /**
    * 创建新技能脚手架
    */
   create(name: string): string {

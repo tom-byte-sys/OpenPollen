@@ -73,8 +73,8 @@ hiveagent skill create my-skill         # 创建新技能
 ## 开发
 
 ```bash
-git clone https://github.com/anthropics/hiveagent.git
-cd hiveagent
+git clone https://github.com/gyp3085000/HiveAgent.git
+cd HiveAgent
 npm install
 npm run dev
 ```

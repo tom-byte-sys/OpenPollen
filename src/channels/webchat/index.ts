@@ -101,6 +101,7 @@ export class WebchatAdapter implements ChannelAdapter {
     // 关闭 HTTP 服务
     return new Promise((resolve) => {
       if (this.httpServer) {
+        this.httpServer.closeAllConnections();
         this.httpServer.close(() => {
           this.healthy = false;
           log.info('WebChat 服务已停止');
