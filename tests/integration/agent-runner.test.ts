@@ -3,8 +3,9 @@ import { AgentRunner } from '../../src/agent/runner.js';
 import { SkillManager } from '../../src/agent/skill-manager.js';
 import type { Session } from '../../src/gateway/session.js';
 import type { AppConfig } from '../../src/config/schema.js';
+import type { MemoryStore } from '../../src/memory/interface.js';
 
-// Mock the Claude Agent SDK to be unavailable (so tests use API fallback)
+// Mock the Claude Agent SDK to be unavailable
 vi.mock('@anthropic-ai/claude-agent-sdk', () => {
   throw new Error('SDK not available');
 });
@@ -38,6 +39,17 @@ function createMockConfig(): AppConfig {
   };
 }
 
+function createMockMemory(): MemoryStore {
+  return {
+    get: vi.fn().mockResolvedValue(null),
+    set: vi.fn().mockResolvedValue(undefined),
+    delete: vi.fn().mockResolvedValue(undefined),
+    list: vi.fn().mockResolvedValue([]),
+    clear: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn().mockResolvedValue(undefined),
+  };
+}
+
 function createMockSession(): Session {
   return {
     id: 'test-session',
@@ -55,42 +67,22 @@ function createMockSession(): Session {
 describe('AgentRunner', () => {
   let runner: AgentRunner;
   let skillManager: SkillManager;
+  let memory: MemoryStore;
 
   beforeEach(() => {
     const config = createMockConfig();
     skillManager = new SkillManager(config.skills.directory);
-    runner = new AgentRunner({ config, skillManager });
+    memory = createMockMemory();
+    runner = new AgentRunner({ config, skillManager, memory });
   });
 
   it('should create runner with config', () => {
     expect(runner).toBeDefined();
   });
 
-  it('should handle API call when SDK is not available', async () => {
+  it('should throw when SDK is not available', async () => {
     const session = createMockSession();
 
-    // Mock fetch for API call
-    const mockResponse = {
-      ok: true,
-      json: async () => ({
-        content: [{ type: 'text', text: 'Hello from mock API' }],
-      }),
-    };
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse));
-
-    const response = await runner.run(session, 'Hello');
-    expect(response).toBe('Hello from mock API');
-
-    vi.unstubAllGlobals();
-  });
-
-  it('should return error message when no provider is configured', async () => {
-    const config = createMockConfig();
-    config.providers = {};
-    const emptyRunner = new AgentRunner({ config, skillManager });
-
-    const session = createMockSession();
-    const response = await emptyRunner.run(session, 'Hello');
-    expect(response).toContain('未配置任何模型提供商');
+    await expect(runner.run(session, 'Hello')).rejects.toThrow('Claude Agent SDK 加载失败');
   });
 });

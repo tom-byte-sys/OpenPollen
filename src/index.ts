@@ -54,7 +54,7 @@ export async function createHiveAgent(configPath?: string): Promise<HiveAgentIns
   await loadPluginsFromDirectory(pluginsDir, pluginRegistry);
 
   // 6. 初始化 Agent Runner
-  const agentRunner = new AgentRunner({ config, skillManager });
+  const agentRunner = new AgentRunner({ config, skillManager, memory });
 
   // 7. 初始化会话管理
   const sessionManager = new SessionManager({
@@ -63,7 +63,7 @@ export async function createHiveAgent(configPath?: string): Promise<HiveAgentIns
   });
 
   // 8. 初始化消息路由
-  const router = new MessageRouter({ sessionManager, agentRunner });
+  const router = new MessageRouter({ sessionManager, agentRunner, memory });
 
   // 9. 初始化 Gateway
   const server = new GatewayServer({ config: config.gateway, router });
@@ -75,10 +75,7 @@ export async function createHiveAgent(configPath?: string): Promise<HiveAgentIns
     const dingtalk = new DingtalkAdapter();
     await dingtalk.initialize(config.channels.dingtalk as unknown as Record<string, unknown>);
     dingtalk.onMessage(async (msg) => {
-      const response = await router.handleMessage(msg);
-      if (msg.raw && (msg.raw as Record<string, unknown>)['sessionWebhook']) {
-        // 钉钉通过 webhook 回复，已在适配器内处理
-      }
+      return await router.handleMessage(msg);
     });
     channels.push(dingtalk);
     mainLog.info('钉钉 Channel 已配置');

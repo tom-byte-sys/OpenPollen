@@ -3,6 +3,7 @@ import { resolve, join } from 'node:path';
 import { getLogger } from '../utils/logger.js';
 import type { Session } from '../gateway/session.js';
 import type { AppConfig } from '../config/schema.js';
+import type { MemoryStore } from '../memory/interface.js';
 import { SkillManager } from './skill-manager.js';
 
 const log = getLogger('agent-runner');
@@ -10,6 +11,7 @@ const log = getLogger('agent-runner');
 export interface AgentRunnerOptions {
   config: AppConfig;
   skillManager: SkillManager;
+  memory: MemoryStore;
 }
 
 // Claude Agent SDK 类型（从 @anthropic-ai/claude-agent-sdk 导入）
@@ -45,11 +47,13 @@ interface SDKMessage {
 export class AgentRunner {
   private config: AppConfig;
   private skillManager: SkillManager;
+  private memory: MemoryStore;
   private sdk: ClaudeAgentSDK | null = null;
 
   constructor(options: AgentRunnerOptions) {
     this.config = options.config;
     this.skillManager = options.skillManager;
+    this.memory = options.memory;
   }
 
   /**
@@ -62,15 +66,17 @@ export class AgentRunner {
     }, '开始处理消息');
 
     try {
-      // 尝试加载 Claude Agent SDK
-      const sdk = await this.loadSDK();
-
-      if (sdk) {
-        return await this.runWithSDK(sdk, session, userMessage);
+      // Layer 1: 从 memory 恢复 SDK 会话 ID
+      if (!session.sdkSessionId) {
+        const savedSessionId = await this.memory.get('sdk-sessions', session.channelId);
+        if (savedSessionId) {
+          session.sdkSessionId = savedSessionId;
+          log.info({ sessionId: session.id, sdkSessionId: savedSessionId }, '从 memory 恢复 SDK 会话 ID');
+        }
       }
 
-      // SDK 不可用时使用直接 API 调用
-      return await this.runWithAPI(session, userMessage);
+      const sdk = await this.loadSDK();
+      return await this.runWithSDK(sdk, session, userMessage);
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error);
       const errStack = error instanceof Error ? error.stack : undefined;
@@ -79,7 +85,7 @@ export class AgentRunner {
     }
   }
 
-  private async loadSDK(): Promise<ClaudeAgentSDK | null> {
+  private async loadSDK(): Promise<ClaudeAgentSDK> {
     if (this.sdk) return this.sdk;
 
     try {
@@ -89,12 +95,13 @@ export class AgentRunner {
         log.info('Claude Agent SDK 加载成功');
         return this.sdk;
       }
-      log.warn('Claude Agent SDK 模块未导出 query 函数');
-      return null;
+      throw new Error('Claude Agent SDK 模块未导出 query 函数');
     } catch (err) {
+      if (err instanceof Error && err.message.includes('未导出 query')) {
+        throw err;
+      }
       const errMsg = err instanceof Error ? err.message : String(err);
-      log.debug({ error: errMsg }, 'Claude Agent SDK 未安装，使用直接 API 模式');
-      return null;
+      throw new Error(`Claude Agent SDK 加载失败: ${errMsg}`);
     }
   }
 
@@ -130,13 +137,24 @@ export class AgentRunner {
       log.info({ sessionId: session.id, sdkSessionId: session.sdkSessionId }, '恢复 SDK 会话');
     }
 
-    if (config.agent.systemPrompt) {
-      // 使用 append 模式：将自定义提示追加到 SDK 默认 Claude Code 系统提示
-      // 避免产生额外的 cache_control 块（API 限制最多 4 个）
+    // 构建系统提示：基础提示 + 用户上下文
+    let appendPrompt = config.agent.systemPrompt ?? '';
+
+    // Layer 2: 无 SDK 会话可恢复时，注入用户历史上下文
+    if (!session.sdkSessionId) {
+      const userContext = await this.loadUserContext(session.userId);
+      if (userContext) {
+        appendPrompt = appendPrompt
+          ? `${appendPrompt}\n\n${userContext}`
+          : userContext;
+      }
+    }
+
+    if (appendPrompt) {
       options['systemPrompt'] = {
         type: 'preset',
         preset: 'claude_code',
-        append: config.agent.systemPrompt,
+        append: appendPrompt,
       };
     }
 
@@ -178,6 +196,13 @@ export class AgentRunner {
       if (message.type === 'result') {
         if (message.session_id) {
           session.sdkSessionId = message.session_id;
+
+          // Layer 1: 持久化 SDK 会话 ID 到 memory
+          try {
+            await this.memory.set('sdk-sessions', session.channelId, message.session_id);
+          } catch (err) {
+            log.warn({ error: err }, '持久化 SDK 会话 ID 失败');
+          }
         }
         session.totalCostUsd += message.total_cost_usd ?? 0;
 
@@ -206,99 +231,25 @@ export class AgentRunner {
     return responseText;
   }
 
-  private async runWithAPI(session: Session, userMessage: string): Promise<string> {
-    const provider = this.getActiveProvider();
-
-    if (!provider) {
-      return '未配置任何模型提供商。请运行 `hiveagent init` 配置模型。';
-    }
-
-    log.debug({ sessionId: session.id, provider: provider.name }, '使用直接 API 调用');
-
+  /**
+   * 加载用户历史上下文摘要
+   */
+  private async loadUserContext(userId: string): Promise<string | null> {
     try {
-      let responseText: string;
+      const entries = await this.memory.list(`user:${userId}`);
+      if (entries.length === 0) return null;
 
-      if (provider.name === 'ollama') {
-        responseText = await this.callOllamaAPI(provider, userMessage);
-      } else {
-        responseText = await this.callAnthropicAPI(provider, userMessage);
-      }
+      // 按创建时间排序，取最近 5 条
+      const sorted = entries
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, 5);
 
-      log.info({ sessionId: session.id, responseLength: responseText.length }, '消息处理完成 (API)');
-      return responseText;
-    } catch (error) {
-      log.error({ error }, 'API 请求失败');
-      throw error;
+      const lines = sorted.map(e => e.value);
+      return `## 用户历史对话摘要\n${lines.join('\n')}`;
+    } catch (err) {
+      log.warn({ error: err, userId }, '加载用户上下文失败');
+      return null;
     }
-  }
-
-  private async callAnthropicAPI(
-    provider: { baseUrl: string; apiKey: string; model?: string },
-    userMessage: string,
-  ): Promise<string> {
-    const response = await fetch(`${provider.baseUrl}/v1/messages`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': provider.apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: provider.model ?? this.config.agent.model,
-        max_tokens: 4096,
-        messages: [{ role: 'user', content: userMessage }],
-        system: this.config.agent.systemPrompt,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      log.error({ status: response.status, body: errorText }, 'Anthropic API 调用失败');
-      return `API 调用失败: ${response.status}`;
-    }
-
-    const data = await response.json() as {
-      content: Array<{ type: string; text?: string }>;
-    };
-
-    return data.content
-      .filter(b => b.type === 'text')
-      .map(b => b.text ?? '')
-      .join('');
-  }
-
-  private async callOllamaAPI(
-    provider: { baseUrl: string; model?: string },
-    userMessage: string,
-  ): Promise<string> {
-    const messages = [
-      ...(this.config.agent.systemPrompt
-        ? [{ role: 'system', content: this.config.agent.systemPrompt }]
-        : []),
-      { role: 'user', content: userMessage },
-    ];
-
-    const response = await fetch(`${provider.baseUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: provider.model ?? 'qwen3-coder',
-        messages,
-        stream: false,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      log.error({ status: response.status, body: errorText }, 'Ollama API 调用失败');
-      return `Ollama API 调用失败: ${response.status}`;
-    }
-
-    const data = await response.json() as {
-      message?: { content?: string };
-    };
-
-    return data.message?.content ?? '';
   }
 
   /**
@@ -346,36 +297,5 @@ export class AgentRunner {
     }
 
     return workspaceDir;
-  }
-
-  private getActiveProvider(): { name: string; baseUrl: string; apiKey: string; model?: string } | null {
-    const { providers } = this.config;
-
-    if (providers.agentterm?.enabled && providers.agentterm.apiKey) {
-      return {
-        name: 'agentterm',
-        baseUrl: providers.agentterm.baseUrl ?? 'https://lite.beebywork.com/api/v1/anthropic-proxy',
-        apiKey: providers.agentterm.apiKey,
-      };
-    }
-
-    if (providers.anthropic?.enabled && providers.anthropic.apiKey) {
-      return {
-        name: 'anthropic',
-        baseUrl: providers.anthropic.baseUrl ?? 'https://api.anthropic.com',
-        apiKey: providers.anthropic.apiKey,
-      };
-    }
-
-    if (providers.ollama?.enabled) {
-      return {
-        name: 'ollama',
-        baseUrl: providers.ollama.baseUrl ?? 'http://localhost:11434',
-        apiKey: '',
-        model: providers.ollama.model,
-      };
-    }
-
-    return null;
   }
 }

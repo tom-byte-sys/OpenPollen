@@ -6,8 +6,9 @@ import { AgentRunner } from '../../src/agent/runner.js';
 import { SkillManager } from '../../src/agent/skill-manager.js';
 import { GatewayServer } from '../../src/gateway/server.js';
 import type { AppConfig } from '../../src/config/schema.js';
+import type { MemoryStore } from '../../src/memory/interface.js';
 
-// Mock SDK unavailable (force API fallback mode in tests)
+// Mock SDK unavailable
 vi.mock('@anthropic-ai/claude-agent-sdk', () => {
   throw new Error('SDK not available');
 });
@@ -44,6 +45,17 @@ function createTestConfig(): AppConfig {
   };
 }
 
+function createMockMemory(): MemoryStore {
+  return {
+    get: vi.fn().mockResolvedValue(null),
+    set: vi.fn().mockResolvedValue(undefined),
+    delete: vi.fn().mockResolvedValue(undefined),
+    list: vi.fn().mockResolvedValue([]),
+    clear: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn().mockResolvedValue(undefined),
+  };
+}
+
 describe('WebChat E2E', () => {
   let gateway: GatewayServer;
   let sessionManager: SessionManager;
@@ -52,12 +64,13 @@ describe('WebChat E2E', () => {
   beforeEach(async () => {
     const config = createTestConfig();
     const skillManager = new SkillManager(config.skills.directory);
-    const agentRunner = new AgentRunner({ config, skillManager });
+    const memory = createMockMemory();
+    const agentRunner = new AgentRunner({ config, skillManager, memory });
     sessionManager = new SessionManager({
       timeoutMinutes: config.gateway.session.timeoutMinutes,
       maxConcurrent: config.gateway.session.maxConcurrent,
     });
-    const router = new MessageRouter({ sessionManager, agentRunner });
+    const router = new MessageRouter({ sessionManager, agentRunner, memory });
     gateway = new GatewayServer({ config: config.gateway, router });
 
     await gateway.start();
@@ -85,34 +98,6 @@ describe('WebChat E2E', () => {
     const data = await res.json() as { status: string; activeSessions: number };
     expect(data.status).toBe('running');
     expect(data.activeSessions).toBe(0);
-  });
-
-  it('should handle chat message via HTTP API', async () => {
-    // Mock 掉 agentRunner 内部调用的 API (Anthropic Messages API)
-    const mockApiResponse = {
-      ok: true,
-      json: async () => ({
-        content: [{ type: 'text', text: 'E2E test response' }],
-      }),
-      text: async () => '',
-    };
-    vi.stubGlobal('fetch', vi.fn().mockImplementation((url: string | URL, init?: RequestInit) => {
-      const urlStr = typeof url === 'string' ? url : url.toString();
-      if (urlStr.includes('/v1/messages')) {
-        return Promise.resolve(mockApiResponse);
-      }
-      return realFetch(url, init);
-    }));
-
-    const res = await realFetch(`http://127.0.0.1:${gatewayPort}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: 'Hello', userId: 'e2e-user' }),
-    });
-
-    const data = await res.json() as { response: string };
-    expect(res.status).toBe(200);
-    expect(data.response).toBe('E2E test response');
   });
 
   it('should reject chat without message field', async () => {

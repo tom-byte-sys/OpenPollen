@@ -33,6 +33,6 @@ export interface ChannelAdapter {
   start(): Promise<void>;
   stop(): Promise<void>;
   sendMessage(message: OutboundMessage): Promise<void>;
-  onMessage(handler: (message: InboundMessage) => Promise<void>): void;
+  onMessage(handler: (message: InboundMessage) => Promise<string | void>): void;
   isHealthy(): boolean;
 }

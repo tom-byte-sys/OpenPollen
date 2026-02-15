@@ -56,8 +56,19 @@ export function initLogger(options: { level?: string; file?: string; stdout?: bo
   return logger;
 }
 
+/**
+ * 获取命名日志实例。
+ * 返回 Proxy 以确保始终委托到当前 logger，
+ * 即使 getLogger() 在 initLogger() 之前调用也能正常工作。
+ */
 export function getLogger(name?: string): pino.Logger {
-  return name ? logger.child({ module: name }) : logger;
+  return new Proxy({} as pino.Logger, {
+    get(_target, prop, receiver) {
+      const current = name ? logger.child({ module: name }) : logger;
+      const value = Reflect.get(current, prop, receiver);
+      return typeof value === 'function' ? value.bind(current) : value;
+    },
+  });
 }
 
 export { logger };

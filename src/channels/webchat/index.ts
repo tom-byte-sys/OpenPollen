@@ -24,7 +24,7 @@ export class WebchatAdapter implements ChannelAdapter {
   private httpServer: Server | null = null;
   private wss: WebSocketServer | null = null;
   private clients = new Map<string, WebchatClient>();
-  private messageHandler?: (message: InboundMessage) => Promise<void>;
+  private messageHandler?: (message: InboundMessage) => Promise<string | void>;
   private healthy = false;
 
   async initialize(config: Record<string, unknown>): Promise<void> {
@@ -129,7 +129,7 @@ export class WebchatAdapter implements ChannelAdapter {
     }
   }
 
-  onMessage(handler: (message: InboundMessage) => Promise<void>): void {
+  onMessage(handler: (message: InboundMessage) => Promise<string | void>): void {
     this.messageHandler = handler;
   }
 

@@ -19,7 +19,7 @@ export class DingtalkAdapter implements ChannelAdapter {
 
   private config!: DingtalkConfig;
   private client: DingtalkStreamClient | null = null;
-  private messageHandler?: (message: InboundMessage) => Promise<void>;
+  private messageHandler?: (message: InboundMessage) => Promise<string | void>;
   private healthy = false;
 
   // Access token 缓存
@@ -45,12 +45,15 @@ export class DingtalkAdapter implements ChannelAdapter {
       this.client = new DStream.DWClient({
         clientId: this.config.clientId,
         clientSecret: this.config.clientSecret,
+        debug: false,
       }) as DingtalkStreamClient;
 
       // 注册机器人消息回调
       this.client!.registerCallbackListener(
         '/v1.0/im/bot/messages/get',
         async (res: DingtalkCallbackResponse) => {
+          // 立即发送 ACK 避免服务端重试
+          this.client!.socketCallBackResponse(res.headers.messageId, { response: 'OK' });
           await this.handleCallback(res);
         },
       );
@@ -146,7 +149,7 @@ export class DingtalkAdapter implements ChannelAdapter {
     }
   }
 
-  onMessage(handler: (message: InboundMessage) => Promise<void>): void {
+  onMessage(handler: (message: InboundMessage) => Promise<string | void>): void {
     this.messageHandler = handler;
   }
 
@@ -203,9 +206,10 @@ export class DingtalkAdapter implements ChannelAdapter {
   private async processAndReply(message: InboundMessage, webhookUrl?: string): Promise<void> {
     try {
       const response = await this.messageHandler!(message);
+      const replyText = (typeof response === 'string' ? response : '') || '处理完成';
 
       if (webhookUrl) {
-        await this.replyViaWebhook(webhookUrl, response as unknown as string);
+        await this.replyViaWebhook(webhookUrl, replyText);
       }
     } catch (error) {
       log.error({ error, messageId: message.id }, '处理消息或回复失败');
@@ -289,6 +293,7 @@ interface DingtalkStreamClient {
   registerCallbackListener(topic: string, handler: (res: DingtalkCallbackResponse) => Promise<void>): void;
   connect(): Promise<void>;
   disconnect(): Promise<void>;
+  socketCallBackResponse(messageId: string, result: unknown): void;
 }
 
 interface DingtalkCallbackResponse {
