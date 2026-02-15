@@ -2,7 +2,7 @@
 
 import { Command } from 'commander';
 import { createInterface } from 'node:readline';
-import { existsSync, mkdirSync, writeFileSync, readFileSync, watchFile, statSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync, readFileSync, watchFile, statSync, readdirSync, unlinkSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -10,6 +10,22 @@ import { createHiveAgent } from '../src/index.js';
 import { loadConfig } from '../src/config/loader.js';
 import { SkillManager } from '../src/agent/skill-manager.js';
 import { maskSecret } from '../src/utils/crypto.js';
+
+const PID_FILE = resolve(homedir(), '.hiveagent', 'hiveagent.pid');
+
+function writePidFile(): void {
+  const dir = resolve(homedir(), '.hiveagent');
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  writeFileSync(PID_FILE, String(process.pid));
+}
+
+function removePidFile(): void {
+  try {
+    if (existsSync(PID_FILE)) unlinkSync(PID_FILE);
+  } catch {
+    // ignore cleanup errors
+  }
+}
 
 // 获取内置技能目录路径（相对于 CLI 入口）
 function getBuiltinSkillsDir(): string {
@@ -36,6 +52,8 @@ program
       const hub = await createHiveAgent(options.config);
       await hub.start();
 
+      writePidFile();
+
       console.log('\n  HiveAgent v0.1.0 已启动');
       console.log(`  Gateway: http://${hub.config.gateway.host}:${hub.config.gateway.port}`);
 
@@ -56,11 +74,13 @@ program
         }
         stopping = true;
         console.log('\n正在停止...');
+        removePidFile();
         await hub.stop();
         process.exit(0);
       };
       process.on('SIGINT', shutdown);
       process.on('SIGTERM', shutdown);
+      process.on('exit', removePidFile);
     } catch (error) {
       console.error('启动失败:', error instanceof Error ? error.message : error);
       process.exit(1);
@@ -219,7 +239,49 @@ program
   .command('stop')
   .description('停止 HiveAgent Gateway')
   .action(() => {
-    console.log('请使用 Ctrl+C 停止前台运行的 HiveAgent，或 kill 后台进程。');
+    if (!existsSync(PID_FILE)) {
+      console.log('HiveAgent 未运行（PID 文件不存在）。');
+      return;
+    }
+
+    const pidStr = readFileSync(PID_FILE, 'utf-8').trim();
+    const pid = parseInt(pidStr, 10);
+
+    if (isNaN(pid)) {
+      console.log('PID 文件内容无效，已清理。');
+      removePidFile();
+      return;
+    }
+
+    // 检查进程是否存活
+    try {
+      process.kill(pid, 0);
+    } catch {
+      console.log(`进程 ${pid} 不存在，清理过期 PID 文件。`);
+      removePidFile();
+      return;
+    }
+
+    // 发送 SIGTERM
+    console.log(`正在停止 HiveAgent (PID: ${pid})...`);
+    process.kill(pid, 'SIGTERM');
+
+    // 等待确认进程退出
+    let checks = 0;
+    const interval = setInterval(() => {
+      checks++;
+      try {
+        process.kill(pid, 0);
+        if (checks >= 10) {
+          clearInterval(interval);
+          console.log(`进程 ${pid} 未在 5 秒内退出。可使用 kill -9 ${pid} 强制终止。`);
+        }
+      } catch {
+        clearInterval(interval);
+        removePidFile();
+        console.log('HiveAgent 已停止。');
+      }
+    }, 500);
   });
 
 // === status ===

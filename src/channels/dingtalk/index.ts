@@ -4,6 +4,8 @@ import type { ChannelAdapter, InboundMessage, OutboundMessage } from '../interfa
 
 const log = getLogger('dingtalk');
 
+const MAX_MESSAGE_LENGTH = 18000;
+
 interface DingtalkConfig {
   clientId: string;
   clientSecret: string;
@@ -19,6 +21,10 @@ export class DingtalkAdapter implements ChannelAdapter {
   private client: DingtalkStreamClient | null = null;
   private messageHandler?: (message: InboundMessage) => Promise<void>;
   private healthy = false;
+
+  // Access token 缓存
+  private _accessToken: string | null = null;
+  private _tokenExpiresAt = 0;
 
   async initialize(config: Record<string, unknown>): Promise<void> {
     this.config = config as unknown as DingtalkConfig;
@@ -69,6 +75,8 @@ export class DingtalkAdapter implements ChannelAdapter {
       this.client = null;
     }
     this.healthy = false;
+    this._accessToken = null;
+    this._tokenExpiresAt = 0;
     log.info('钉钉适配器已停止');
   }
 
@@ -77,8 +85,21 @@ export class DingtalkAdapter implements ChannelAdapter {
       throw new Error('钉钉客户端未连接');
     }
 
-    // 通过钉钉 API 发送消息
-    const accessToken = await this.getAccessToken();
+    let accessToken: string;
+    try {
+      accessToken = await this.getAccessToken();
+    } catch (error) {
+      log.error({ error }, '获取 access token 失败，无法发送消息');
+      throw error;
+    }
+
+    // 截断超长消息
+    let text = message.content.text ?? '';
+    if (text.length > MAX_MESSAGE_LENGTH) {
+      text = text.slice(0, MAX_MESSAGE_LENGTH) + '\n\n...(内容过长已截断)';
+      log.warn({ originalLength: (message.content.text ?? '').length, truncatedTo: MAX_MESSAGE_LENGTH }, '消息超长已截断');
+    }
+
     const url = message.conversationType === 'group'
       ? 'https://api.dingtalk.com/v1.0/robot/groupMessages/send'
       : 'https://api.dingtalk.com/v1.0/robot/oToMessages/batchSend';
@@ -88,33 +109,40 @@ export class DingtalkAdapter implements ChannelAdapter {
           robotCode: this.config.robotCode ?? this.config.clientId,
           openConversationId: message.targetId,
           msgKey: 'sampleMarkdown',
-          msgParam: JSON.stringify({
-            title: '回复',
-            text: message.content.text ?? '',
-          }),
+          msgParam: JSON.stringify({ title: '回复', text }),
         }
       : {
           robotCode: this.config.robotCode ?? this.config.clientId,
           userIds: [message.targetId],
           msgKey: 'sampleMarkdown',
-          msgParam: JSON.stringify({
-            title: '回复',
-            text: message.content.text ?? '',
-          }),
+          msgParam: JSON.stringify({ title: '回复', text }),
         };
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-acs-dingtalk-access-token': accessToken,
-      },
-      body: JSON.stringify(body),
-    });
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-acs-dingtalk-access-token': accessToken,
+        },
+        body: JSON.stringify(body),
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      log.error({ status: response.status, body: errorText }, '发送钉钉消息失败');
+      if (!response.ok) {
+        const errorText = await response.text();
+        log.error({
+          status: response.status,
+          body: errorText,
+          targetId: message.targetId,
+          conversationType: message.conversationType,
+        }, '发送钉钉消息失败');
+      }
+    } catch (error) {
+      log.error({
+        error,
+        targetId: message.targetId,
+        conversationType: message.conversationType,
+      }, '发送钉钉消息异常');
     }
   }
 
@@ -161,34 +189,70 @@ export class DingtalkAdapter implements ChannelAdapter {
       }, '收到钉钉消息');
 
       if (this.messageHandler) {
-        const response = await this.messageHandler(message);
-
-        // 通过 webhook 回复
-        if (data.sessionWebhook) {
-          await this.replyViaWebhook(data.sessionWebhook, response as unknown as string);
-        }
+        // 异步处理：先不阻塞回调，通过 webhook 异步回复
+        const webhookUrl = data.sessionWebhook;
+        this.processAndReply(message, webhookUrl).catch(error => {
+          log.error({ error, messageId: message.id }, '异步处理消息失败');
+        });
       }
     } catch (error) {
       log.error({ error }, '处理钉钉回调失败');
     }
   }
 
-  private async replyViaWebhook(webhookUrl: string, text: string): Promise<void> {
+  private async processAndReply(message: InboundMessage, webhookUrl?: string): Promise<void> {
     try {
-      await fetch(webhookUrl, {
+      const response = await this.messageHandler!(message);
+
+      if (webhookUrl) {
+        await this.replyViaWebhook(webhookUrl, response as unknown as string);
+      }
+    } catch (error) {
+      log.error({ error, messageId: message.id }, '处理消息或回复失败');
+
+      // 尝试通过 webhook 发送错误提示
+      if (webhookUrl) {
+        await this.replyViaWebhook(webhookUrl, '处理消息时出错，请稍后重试。').catch(() => {
+          // ignore error notification failure
+        });
+      }
+    }
+  }
+
+  private async replyViaWebhook(webhookUrl: string, text: string): Promise<void> {
+    // 截断超长回复
+    let content = text;
+    if (content && content.length > MAX_MESSAGE_LENGTH) {
+      content = content.slice(0, MAX_MESSAGE_LENGTH) + '\n\n...(内容过长已截断)';
+    }
+
+    try {
+      const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           msgtype: 'markdown',
-          markdown: { title: '回复', text },
+          markdown: { title: '回复', text: content },
         }),
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        log.error({ status: response.status, body: errorText }, 'Webhook 回复失败');
+      }
     } catch (error) {
-      log.error({ error }, 'Webhook 回复失败');
+      log.error({ error }, 'Webhook 回复异常');
     }
   }
 
   private async getAccessToken(): Promise<string> {
+    // 检查缓存是否有效（提前 5 分钟刷新）
+    if (this._accessToken && Date.now() < this._tokenExpiresAt - 5 * 60 * 1000) {
+      return this._accessToken;
+    }
+
+    log.info('正在刷新钉钉 access token');
+
     const response = await fetch('https://api.dingtalk.com/v1.0/oauth2/accessToken', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -198,8 +262,25 @@ export class DingtalkAdapter implements ChannelAdapter {
       }),
     });
 
-    const data = await response.json() as { accessToken: string };
-    return data.accessToken;
+    if (!response.ok) {
+      const errorText = await response.text();
+      log.error({ status: response.status, body: errorText }, '获取 access token 失败');
+      throw new Error(`获取钉钉 access token 失败: HTTP ${response.status}`);
+    }
+
+    const data = await response.json() as { accessToken?: string; expireIn?: number };
+
+    if (!data.accessToken) {
+      log.error({ data }, 'access token 响应无效');
+      throw new Error('钉钉 access token 响应无效');
+    }
+
+    this._accessToken = data.accessToken;
+    // expireIn 单位为秒，默认 7200 秒
+    this._tokenExpiresAt = Date.now() + (data.expireIn ?? 7200) * 1000;
+
+    log.info('钉钉 access token 刷新成功');
+    return this._accessToken;
   }
 }
 

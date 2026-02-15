@@ -12,7 +12,7 @@
 
 | 阶段 | 状态 | 完成度 |
 |------|------|--------|
-| Phase 1 — MVP | 进行中 | ~75% |
+| Phase 1 — MVP | 进行中 | ~90% |
 | Phase 2 — 技能系统 | 部分完成 | ~40% |
 | Phase 3 — 技能市场 + 开源 | 未开始 | 0% |
 
@@ -95,7 +95,7 @@
 | 计划项 | 状态 | 说明 |
 |--------|------|------|
 | webchat/index.ts | 已完成 | WebSocket 网页聊天，含静态 HTML 前端 |
-| dingtalk/index.ts | 已创建 | 文件存在，基于 dingtalk-stream SDK，需实际测试 |
+| dingtalk/index.ts | 已完成 | 基于 dingtalk-stream SDK，含 token 缓存、消息截断、异步回复 |
 
 ### 9. 入口整合
 
@@ -115,21 +115,21 @@
 | `hiveagent skill create` | 已完成 | 脚手架创建 |
 | `hiveagent skill remove` | 已完成 | 卸载技能 |
 | `hiveagent skill update` | 已完成 | 更新技能 (仅 Git) |
-| `hiveagent stop` | 未完成 | |
-| `hiveagent status` | 未完成 | |
-| `hiveagent config show` | 未完成 | |
+| `hiveagent stop` | 已完成 | PID 文件机制，支持优雅停止 |
+| `hiveagent status` | 已完成 | 通过 Gateway API 查询状态 |
+| `hiveagent config show` | 已完成 | 密钥脱敏显示 |
 | `hiveagent skill search` | 未完成 | 需要市场 API (Phase 3) |
 | `hiveagent skill publish` | 未完成 | 需要市场 API (Phase 3) |
 | `hiveagent skill earnings` | 未完成 | 需要市场 API (Phase 3) |
-| `hiveagent channel list/test` | 未完成 | |
-| `hiveagent logs` | 未完成 | |
+| `hiveagent channel list/test` | 已完成 | 列出平台状态 / 发送测试消息 |
+| `hiveagent logs` | 已完成 | 支持级别过滤、行数限制、持续跟踪 |
 
 ### 11. 记忆系统 (`src/memory/`)
 
 | 计划项 | 状态 | 说明 |
 |--------|------|------|
 | sqlite-store.ts | 已完成 | sql.js 实现（非 better-sqlite3），含 TTL 过期 |
-| file-store.ts | 已创建 | 文件存在，需完善测试 |
+| file-store.ts | 已完成 | Markdown 文件存储，含 TTL 支持，已通过 13 项测试 |
 
 > 注：实际使用 `sql.js`（纯 JS）替代了计划中的 `better-sqlite3`（需编译），降低了安装门槛。
 
@@ -144,7 +144,7 @@
 | integration/dingtalk-adapter.test.ts | 已完成 | 钉钉适配器 mock 测试 |
 | integration/webchat-e2e.test.ts | 已完成 | WebChat 端到端测试 |
 
-> 全部 32 个测试用例通过。
+> 全部 58 个测试用例通过（含 26 个新增记忆系统测试）。
 
 ### 13. 其他 Phase 1 计划项
 
@@ -262,21 +262,20 @@ options['systemPrompt'] = {
 
 ## 下一步工作建议
 
-### 近期优先
+### 近期优先（Phase 1 收尾 → 100%）
 
-1. **钉钉适配器实测** — 文件已创建，需要配置钉钉测试应用进行实际消息流转验证
-2. **Git 提交** — 将 SDK 迁移相关改动提交到版本库
-3. **CLI 完善** — 实现 `stop`, `status`, `config show` 等命令
-4. **Docker 支持** — 编写 Dockerfile，便于服务器部署
+1. **钉钉适配器实测** — 配置钉钉测试应用进行实际消息流转验证
+2. **Docker 支持** — 编写 Dockerfile + docker-compose.yml，便于服务器部署
+3. **GitHub Actions CI** — 自动化 typecheck + test 流水线
 
-### 中期目标
+### 中期目标（Phase 2）
 
-5. **更多聊天平台** — 企业微信、Telegram 适配器
-6. **记忆系统完善** — file-store 完善 + 记忆与 Agent 会话的集成
-7. **插件系统实例** — 编写至少一个完整插件验证插件生命周期
+4. **更多聊天平台** — 企业微信、Telegram 适配器
+5. **记忆与 Agent 集成** — Agent 会话中自动读写记忆
+6. **插件系统实例** — 编写至少一个完整插件验证插件生命周期
 
-### 远期目标 (Phase 3)
+### 远期目标（Phase 3）
 
-8. **技能市场 API** — AgentTerm FastAPI 后端扩展
-9. **开源准备** — 英文 README、贡献指南、CI/CD 配置
-10. **技能市场 CLI** — search / publish / earnings 命令
+7. **技能市场 API** — AgentTerm FastAPI 后端扩展
+8. **开源准备** — 英文 README、贡献指南、SECURITY.md
+9. **技能市场 CLI** — search / publish / earnings 命令
