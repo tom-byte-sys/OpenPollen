@@ -1,0 +1,34 @@
+node_modules/
+dist/
+*.js.map
+*.d.ts.map
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Config with secrets
+hiveagent.json
+agenthub.json
+
+# Data
+*.db
+*.db-journal
+
+# Logs
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test
+coverage/

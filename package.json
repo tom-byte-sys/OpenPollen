@@ -1,0 +1,54 @@
+{
+  "name": "hiveagent",
+  "version": "0.1.0",
+  "description": "安全、易用、国产化的 AI Agent 平台",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "hiveagent": "dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "lint": "eslint src/ cli/ --ext .ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "dingtalk",
+    "claude",
+    "chatbot"
+  ],
+  "author": "HiveAgent Team",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-code": "^1.0.0",
+    "@sinclair/typebox": "^0.34.0",
+    "sql.js": "^1.11.0",
+    "commander": "^13.0.0",
+    "dingtalk-stream": "^2.1.4",
+    "json5": "^2.2.3",
+    "pino": "^9.0.0",
+    "pino-pretty": "^13.0.0",
+    "uuid": "^11.0.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/uuid": "^10.0.0",
+    "@types/ws": "^8.5.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
