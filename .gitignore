@@ -32,3 +32,11 @@ Thumbs.db
 
 # Test
 coverage/
+
+# Website (not open source)
+website/
+
+# Docs site
+docs-site/node_modules/
+docs-site/.vitepress/cache/
+docs-site/.vitepress/dist/

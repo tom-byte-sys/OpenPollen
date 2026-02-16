@@ -1,0 +1,18 @@
+# HiveAgent 文档站 Nginx 配置片段
+# 添加到 agent.beebywork.com 的 server block 中
+
+# 文档站 - VitePress 静态文件
+location /docs {
+    alias /var/www/hiveagent-docs;
+    index index.html;
+    try_files $uri $uri/ $uri.html =404;
+}
+
+# /docs 和 /docs/ 重定向到中文首页
+location = /docs {
+    return 302 /docs/zh/;
+}
+
+location = /docs/ {
+    return 302 /docs/zh/;
+}
