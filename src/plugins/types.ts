@@ -1,3 +1,5 @@
+import type { InboundMessage, OutboundMessage } from '../channels/interface.js';
+
 export type PluginSlot = 'channel' | 'skill' | 'provider' | 'memory';
 
 export interface PluginConfigField {
@@ -22,6 +24,19 @@ export interface Plugin {
   start(): Promise<void>;
   stop(): Promise<void>;
   isHealthy(): boolean;
+}
+
+export interface ChannelPlugin extends Plugin {
+  readonly name: string;
+  readonly type: string;
+  sendMessage(message: OutboundMessage): Promise<void>;
+  onMessage(handler: (message: InboundMessage, onChunk?: (text: string) => void) => Promise<string | void>): void;
+}
+
+export function isChannelPlugin(plugin: Plugin): plugin is ChannelPlugin {
+  return plugin.manifest.slot === 'channel'
+    && 'sendMessage' in plugin
+    && 'onMessage' in plugin;
 }
 
 export interface PluginModule {

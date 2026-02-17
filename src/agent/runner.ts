@@ -59,7 +59,7 @@ export class AgentRunner {
   /**
    * 运行 Agent 处理用户消息
    */
-  async run(session: Session, userMessage: string): Promise<string> {
+  async run(session: Session, userMessage: string, onChunk?: (text: string) => void): Promise<string> {
     log.info({
       sessionId: session.id,
       messageLength: userMessage.length,
@@ -76,7 +76,7 @@ export class AgentRunner {
       }
 
       const sdk = await this.loadSDK();
-      return await this.runWithSDK(sdk, session, userMessage);
+      return await this.runWithSDK(sdk, session, userMessage, onChunk);
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error);
       const errStack = error instanceof Error ? error.stack : undefined;
@@ -105,7 +105,7 @@ export class AgentRunner {
     }
   }
 
-  private async runWithSDK(sdk: ClaudeAgentSDK, session: Session, userMessage: string): Promise<string> {
+  private async runWithSDK(sdk: ClaudeAgentSDK, session: Session, userMessage: string, onChunk?: (text: string) => void): Promise<string> {
     const { config, skillManager } = this;
     const skillsDir = skillManager['skillsDir'];
 
@@ -192,6 +192,17 @@ export class AgentRunner {
         }
       }
 
+      // 流式事件 - 实时推送增量文本
+      if (message.type === 'stream_event' && onChunk) {
+        const event = (message as unknown as Record<string, unknown>).event as Record<string, unknown> | undefined;
+        if (event?.type === 'content_block_delta') {
+          const delta = event.delta as Record<string, unknown> | undefined;
+          if (delta?.type === 'text_delta' && typeof delta.text === 'string') {
+            onChunk(delta.text);
+          }
+        }
+      }
+
       // 结果消息 - 保存 session_id 和费用
       if (message.type === 'result') {
         if (message.session_id) {
@@ -203,6 +214,9 @@ export class AgentRunner {
           } catch (err) {
             log.warn({ error: err }, '持久化 SDK 会话 ID 失败');
           }
+
+          // 更新会话历史
+          await this.updateSessionHistory(session.userId, message.session_id, userMessage);
         }
         session.totalCostUsd += message.total_cost_usd ?? 0;
 
@@ -229,6 +243,35 @@ export class AgentRunner {
     }, '消息处理完成 (SDK)');
 
     return responseText;
+  }
+
+  /**
+   * 创建或更新会话历史条目
+   */
+  private async updateSessionHistory(userId: string, sdkSessionId: string, userMessage: string): Promise<void> {
+    const historyNamespace = `sdk-session-history:${userId}`;
+    try {
+      const existing = await this.memory.get(historyNamespace, sdkSessionId);
+      const now = Date.now();
+
+      if (existing) {
+        // 已存在：更新 lastActiveAt
+        const data = JSON.parse(existing) as { sdkSessionId: string; createdAt: number; lastActiveAt: number; preview: string };
+        data.lastActiveAt = now;
+        await this.memory.set(historyNamespace, sdkSessionId, JSON.stringify(data));
+      } else {
+        // 首次创建：preview 取用户消息前 50 字符
+        const entry = {
+          sdkSessionId,
+          createdAt: now,
+          lastActiveAt: now,
+          preview: userMessage.slice(0, 50),
+        };
+        await this.memory.set(historyNamespace, sdkSessionId, JSON.stringify(entry));
+      }
+    } catch (err) {
+      log.warn({ error: err, userId, sdkSessionId }, '更新会话历史失败');
+    }
   }
 
   /**

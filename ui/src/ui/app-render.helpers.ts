@@ -1,0 +1,524 @@
+import { html } from "lit";
+import { repeat } from "lit/directives/repeat.js";
+import type { AppViewState } from "./app-view-state.ts";
+import type { ThemeTransitionContext } from "./theme-transition.ts";
+import type { ThemeMode } from "./theme.ts";
+import type { SessionsListResult } from "./types.ts";
+import { refreshChat } from "./app-chat.ts";
+import { syncUrlWithSessionKey } from "./app-settings.ts";
+import { HiveAgentApp } from "./app.ts";
+import { ChatState, loadChatHistory } from "./controllers/chat.ts";
+import { t, getLocale, setLocale } from "./i18n/index.ts";
+import type { TranslationKey } from "./i18n/types.ts";
+import { icons } from "./icons.ts";
+import { iconForTab, pathForTab, type Tab } from "./navigation.ts";
+
+const TAB_TITLE_KEYS: Record<Tab, TranslationKey> = {
+  agents: 'nav.tab.agents',
+  overview: 'nav.tab.overview',
+  channels: 'nav.tab.channels',
+  instances: 'nav.tab.instances',
+  sessions: 'nav.tab.sessions',
+  usage: 'nav.tab.usage',
+  cron: 'nav.tab.cronJobs',
+  skills: 'nav.tab.skills',
+  nodes: 'nav.tab.nodes',
+  chat: 'nav.tab.chat',
+  config: 'nav.tab.config',
+  debug: 'nav.tab.debug',
+  logs: 'nav.tab.logs',
+};
+
+export function titleKeyForTab(tab: Tab): TranslationKey {
+  return TAB_TITLE_KEYS[tab] ?? 'nav.tab.control';
+}
+
+type SessionDefaultsSnapshot = {
+  mainSessionKey?: string;
+  mainKey?: string;
+};
+
+function resolveSidebarChatSessionKey(state: AppViewState): string {
+  const snapshot = state.hello?.snapshot as
+    | { sessionDefaults?: SessionDefaultsSnapshot }
+    | undefined;
+  const mainSessionKey = snapshot?.sessionDefaults?.mainSessionKey?.trim();
+  if (mainSessionKey) {
+    return mainSessionKey;
+  }
+  const mainKey = snapshot?.sessionDefaults?.mainKey?.trim();
+  if (mainKey) {
+    return mainKey;
+  }
+  return "main";
+}
+
+function resetChatStateForSessionSwitch(state: AppViewState, sessionKey: string) {
+  state.sessionKey = sessionKey;
+  state.chatMessage = "";
+  state.chatStream = null;
+  (state as unknown as HiveAgentApp).chatStreamStartedAt = null;
+  state.chatRunId = null;
+  (state as unknown as HiveAgentApp).resetToolStream();
+  (state as unknown as HiveAgentApp).resetChatScroll();
+  state.applySettings({
+    ...state.settings,
+    sessionKey,
+    lastActiveSessionKey: sessionKey,
+  });
+}
+
+export function renderTab(state: AppViewState, tab: Tab) {
+  const href = pathForTab(tab, state.basePath);
+  return html`
+    <a
+      href=${href}
+      class="nav-item ${state.tab === tab ? "active" : ""}"
+      @click=${(event: MouseEvent) => {
+        if (
+          event.defaultPrevented ||
+          event.button !== 0 ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey
+        ) {
+          return;
+        }
+        event.preventDefault();
+        if (tab === "chat") {
+          const mainSessionKey = resolveSidebarChatSessionKey(state);
+          if (state.sessionKey !== mainSessionKey) {
+            resetChatStateForSessionSwitch(state, mainSessionKey);
+            void state.loadAssistantIdentity();
+          }
+        }
+        state.setTab(tab);
+      }}
+      title=${t(titleKeyForTab(tab))}
+    >
+      <span class="nav-item__icon" aria-hidden="true">${icons[iconForTab(tab)]}</span>
+      <span class="nav-item__text">${t(titleKeyForTab(tab))}</span>
+    </a>
+  `;
+}
+
+export function renderChatControls(state: AppViewState) {
+  const mainSessionKey = resolveMainSessionKey(state.hello, state.sessionsResult);
+  const sessionOptions = resolveSessionOptions(
+    state.sessionKey,
+    state.sessionsResult,
+    mainSessionKey,
+  );
+  const disableThinkingToggle = state.onboarding;
+  const disableFocusToggle = state.onboarding;
+  const showThinking = state.onboarding ? false : state.settings.chatShowThinking;
+  const focusActive = state.onboarding ? true : state.settings.chatFocusMode;
+  // Refresh icon
+  const refreshIcon = html`
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
+      <path d="M21 3v5h-5"></path>
+    </svg>
+  `;
+  const focusIcon = html`
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M4 7V4h3"></path>
+      <path d="M20 7V4h-3"></path>
+      <path d="M4 17v3h3"></path>
+      <path d="M20 17v3h-3"></path>
+      <circle cx="12" cy="12" r="3"></circle>
+    </svg>
+  `;
+  return html`
+    <div class="chat-controls">
+      <label class="field chat-controls__session">
+        <select
+          .value=${state.sessionKey}
+          ?disabled=${!state.connected}
+          @change=${(e: Event) => {
+            const next = (e.target as HTMLSelectElement).value;
+            state.sessionKey = next;
+            state.chatMessage = "";
+            state.chatStream = null;
+            (state as unknown as HiveAgentApp).chatStreamStartedAt = null;
+            state.chatRunId = null;
+            (state as unknown as HiveAgentApp).resetToolStream();
+            (state as unknown as HiveAgentApp).resetChatScroll();
+            state.applySettings({
+              ...state.settings,
+              sessionKey: next,
+              lastActiveSessionKey: next,
+            });
+            void state.loadAssistantIdentity();
+            syncUrlWithSessionKey(
+              state as unknown as Parameters<typeof syncUrlWithSessionKey>[0],
+              next,
+              true,
+            );
+            void loadChatHistory(state as unknown as ChatState);
+          }}
+        >
+          ${repeat(
+            sessionOptions,
+            (entry) => entry.key,
+            (entry) =>
+              html`<option value=${entry.key} title=${entry.key}>
+                ${entry.displayName ?? entry.key}
+              </option>`,
+          )}
+        </select>
+      </label>
+      <button
+        class="btn btn--sm btn--icon"
+        ?disabled=${state.chatLoading || !state.connected}
+        @click=${async () => {
+          const app = state as unknown as HiveAgentApp;
+          app.chatManualRefreshInFlight = true;
+          app.chatNewMessagesBelow = false;
+          await app.updateComplete;
+          app.resetToolStream();
+          try {
+            await refreshChat(state as unknown as Parameters<typeof refreshChat>[0], {
+              scheduleScroll: false,
+            });
+            app.scrollToBottom({ smooth: true });
+          } finally {
+            requestAnimationFrame(() => {
+              app.chatManualRefreshInFlight = false;
+              app.chatNewMessagesBelow = false;
+            });
+          }
+        }}
+        title=${t('chat.refreshData')}
+      >
+        ${refreshIcon}
+      </button>
+      <span class="chat-controls__separator">|</span>
+      <button
+        class="btn btn--sm btn--icon ${showThinking ? "active" : ""}"
+        ?disabled=${disableThinkingToggle}
+        @click=${() => {
+          if (disableThinkingToggle) {
+            return;
+          }
+          state.applySettings({
+            ...state.settings,
+            chatShowThinking: !state.settings.chatShowThinking,
+          });
+        }}
+        aria-pressed=${showThinking}
+        title=${
+          disableThinkingToggle
+            ? t('chat.thinkingDisabledOnboarding')
+            : t('chat.thinkingToggle')
+        }
+      >
+        ${icons.brain}
+      </button>
+      <button
+        class="btn btn--sm btn--icon ${focusActive ? "active" : ""}"
+        ?disabled=${disableFocusToggle}
+        @click=${() => {
+          if (disableFocusToggle) {
+            return;
+          }
+          state.applySettings({
+            ...state.settings,
+            chatFocusMode: !state.settings.chatFocusMode,
+          });
+        }}
+        aria-pressed=${focusActive}
+        title=${
+          disableFocusToggle
+            ? t('chat.focusDisabledOnboarding')
+            : t('chat.focusToggle')
+        }
+      >
+        ${focusIcon}
+      </button>
+    </div>
+  `;
+}
+
+function resolveMainSessionKey(
+  hello: AppViewState["hello"],
+  sessions: SessionsListResult | null,
+): string | null {
+  const snapshot = hello?.snapshot as { sessionDefaults?: SessionDefaultsSnapshot } | undefined;
+  const mainSessionKey = snapshot?.sessionDefaults?.mainSessionKey?.trim();
+  if (mainSessionKey) {
+    return mainSessionKey;
+  }
+  const mainKey = snapshot?.sessionDefaults?.mainKey?.trim();
+  if (mainKey) {
+    return mainKey;
+  }
+  if (sessions?.sessions?.some((row) => row.key === "main")) {
+    return "main";
+  }
+  return null;
+}
+
+/* ── Channel display labels ────────────────────────────── */
+const CHANNEL_LABELS: Record<string, string> = {
+  bluebubbles: "iMessage",
+  telegram: "Telegram",
+  discord: "Discord",
+  signal: "Signal",
+  slack: "Slack",
+  whatsapp: "WhatsApp",
+  matrix: "Matrix",
+  email: "Email",
+  sms: "SMS",
+};
+
+const KNOWN_CHANNEL_KEYS = Object.keys(CHANNEL_LABELS);
+
+/** Parsed type / context extracted from a session key. */
+export type SessionKeyInfo = {
+  /** Prefix for typed sessions (Subagent:/Cron:). Empty for others. */
+  prefix: string;
+  /** Human-readable fallback when no label / displayName is available. */
+  fallbackName: string;
+};
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/**
+ * Parse a session key to extract type information and a human-readable
+ * fallback display name.  Exported for testing.
+ */
+export function parseSessionKey(key: string): SessionKeyInfo {
+  // ── Main session ─────────────────────────────────
+  if (key === "main" || key === "agent:main:main") {
+    return { prefix: "", fallbackName: t('sessions.mainSession') };
+  }
+
+  // ── Subagent ─────────────────────────────────────
+  if (key.includes(":subagent:")) {
+    return { prefix: t('sessions.subagent'), fallbackName: t('sessions.subagent') };
+  }
+
+  // ── Cron job ─────────────────────────────────────
+  if (key.includes(":cron:")) {
+    return { prefix: t('sessions.cronJob'), fallbackName: t('sessions.cronJob') };
+  }
+
+  // ── Direct chat  (agent:<x>:<channel>:direct:<id>) ──
+  const directMatch = key.match(/^agent:[^:]+:([^:]+):direct:(.+)$/);
+  if (directMatch) {
+    const channel = directMatch[1];
+    const identifier = directMatch[2];
+    const channelLabel = CHANNEL_LABELS[channel] ?? capitalize(channel);
+    return { prefix: "", fallbackName: `${channelLabel} · ${identifier}` };
+  }
+
+  // ── Group chat  (agent:<x>:<channel>:group:<id>) ────
+  const groupMatch = key.match(/^agent:[^:]+:([^:]+):group:(.+)$/);
+  if (groupMatch) {
+    const channel = groupMatch[1];
+    const channelLabel = CHANNEL_LABELS[channel] ?? capitalize(channel);
+    return { prefix: "", fallbackName: t('sessions.group', { channel: channelLabel }) };
+  }
+
+  // ── Channel-prefixed legacy keys (e.g. "bluebubbles:g-…") ──
+  for (const ch of KNOWN_CHANNEL_KEYS) {
+    if (key === ch || key.startsWith(`${ch}:`)) {
+      return { prefix: "", fallbackName: t('sessions.channelSession', { channel: CHANNEL_LABELS[ch] }) };
+    }
+  }
+
+  // ── Unknown — return key as-is ───────────────────
+  return { prefix: "", fallbackName: key };
+}
+
+export function resolveSessionDisplayName(
+  key: string,
+  row?: SessionsListResult["sessions"][number],
+): string {
+  const label = row?.label?.trim() || "";
+  const displayName = row?.displayName?.trim() || "";
+  const { prefix, fallbackName } = parseSessionKey(key);
+
+  if (label && label !== key) {
+    return prefix ? `${prefix} ${label}` : label;
+  }
+  if (displayName && displayName !== key) {
+    return prefix ? `${prefix} ${displayName}` : displayName;
+  }
+  return fallbackName;
+}
+
+function resolveSessionOptions(
+  sessionKey: string,
+  sessions: SessionsListResult | null,
+  mainSessionKey?: string | null,
+) {
+  const seen = new Set<string>();
+  const options: Array<{ key: string; displayName?: string }> = [];
+
+  const resolvedMain = mainSessionKey && sessions?.sessions?.find((s) => s.key === mainSessionKey);
+  const resolvedCurrent = sessions?.sessions?.find((s) => s.key === sessionKey);
+
+  // Add main session key first
+  if (mainSessionKey) {
+    seen.add(mainSessionKey);
+    options.push({
+      key: mainSessionKey,
+      displayName: resolveSessionDisplayName(mainSessionKey, resolvedMain || undefined),
+    });
+  }
+
+  // Add current session key next
+  if (!seen.has(sessionKey)) {
+    seen.add(sessionKey);
+    options.push({
+      key: sessionKey,
+      displayName: resolveSessionDisplayName(sessionKey, resolvedCurrent),
+    });
+  }
+
+  // Add sessions from the result
+  if (sessions?.sessions) {
+    for (const s of sessions.sessions) {
+      if (!seen.has(s.key)) {
+        seen.add(s.key);
+        options.push({
+          key: s.key,
+          displayName: resolveSessionDisplayName(s.key, s),
+        });
+      }
+    }
+  }
+
+  return options;
+}
+
+const THEME_ORDER: ThemeMode[] = ["system", "light", "dark"];
+
+export function renderThemeToggle(state: AppViewState) {
+  const index = Math.max(0, THEME_ORDER.indexOf(state.theme));
+  const applyTheme = (next: ThemeMode) => (event: MouseEvent) => {
+    const element = event.currentTarget as HTMLElement;
+    const context: ThemeTransitionContext = { element };
+    if (event.clientX || event.clientY) {
+      context.pointerClientX = event.clientX;
+      context.pointerClientY = event.clientY;
+    }
+    state.setTheme(next, context);
+  };
+
+  return html`
+    <div class="theme-toggle" style="--theme-index: ${index};">
+      <div class="theme-toggle__track" role="group" aria-label="${t('topbar.themeGroup')}">
+        <span class="theme-toggle__indicator"></span>
+        <button
+          class="theme-toggle__button ${state.theme === "system" ? "active" : ""}"
+          @click=${applyTheme("system")}
+          aria-pressed=${state.theme === "system"}
+          aria-label="${t('topbar.themeSystem')}"
+          title="${t('topbar.themeSystem')}"
+        >
+          ${renderMonitorIcon()}
+        </button>
+        <button
+          class="theme-toggle__button ${state.theme === "light" ? "active" : ""}"
+          @click=${applyTheme("light")}
+          aria-pressed=${state.theme === "light"}
+          aria-label="${t('topbar.themeLight')}"
+          title="${t('topbar.themeLight')}"
+        >
+          ${renderSunIcon()}
+        </button>
+        <button
+          class="theme-toggle__button ${state.theme === "dark" ? "active" : ""}"
+          @click=${applyTheme("dark")}
+          aria-pressed=${state.theme === "dark"}
+          aria-label="${t('topbar.themeDark')}"
+          title="${t('topbar.themeDark')}"
+        >
+          ${renderMoonIcon()}
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+export function renderLocaleToggle(state: AppViewState) {
+  const locale = getLocale();
+  const apply = (next: "en" | "zh") => () => {
+    const app = state as unknown as HiveAgentApp;
+    app.setAppLocale(next);
+  };
+  return html`
+    <div class="locale-toggle" role="group" aria-label="Language">
+      <button
+        class="locale-toggle__button ${locale === "en" ? "active" : ""}"
+        @click=${apply("en")}
+        aria-pressed=${locale === "en"}
+      >EN</button>
+      <button
+        class="locale-toggle__button ${locale === "zh" ? "active" : ""}"
+        @click=${apply("zh")}
+        aria-pressed=${locale === "zh"}
+      >中</button>
+    </div>
+  `;
+}
+
+function renderSunIcon() {
+  return html`
+    <svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="4"></circle>
+      <path d="M12 2v2"></path>
+      <path d="M12 20v2"></path>
+      <path d="m4.93 4.93 1.41 1.41"></path>
+      <path d="m17.66 17.66 1.41 1.41"></path>
+      <path d="M2 12h2"></path>
+      <path d="M20 12h2"></path>
+      <path d="m6.34 17.66-1.41 1.41"></path>
+      <path d="m19.07 4.93-1.41 1.41"></path>
+    </svg>
+  `;
+}
+
+function renderMoonIcon() {
+  return html`
+    <svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"
+      ></path>
+    </svg>
+  `;
+}
+
+function renderMonitorIcon() {
+  return html`
+    <svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <rect width="20" height="14" x="2" y="3" rx="2"></rect>
+      <line x1="8" x2="16" y1="21" y2="21"></line>
+      <line x1="12" x2="12" y1="17" y2="21"></line>
+    </svg>
+  `;
+}

@@ -1,6 +1,7 @@
-import { getLogger } from '../../utils/logger.js';
-import { generateId } from '../../utils/crypto.js';
-import type { ChannelAdapter, InboundMessage, OutboundMessage } from '../interface.js';
+import { getLogger } from '../../src/utils/logger.js';
+import { generateId } from '../../src/utils/crypto.js';
+import type { ChannelPlugin, PluginManifest } from '../../src/plugins/types.js';
+import type { InboundMessage, OutboundMessage } from '../../src/channels/interface.js';
 
 const log = getLogger('dingtalk');
 
@@ -13,7 +14,13 @@ interface DingtalkConfig {
   groupPolicy: 'mention' | 'all';
 }
 
-export class DingtalkAdapter implements ChannelAdapter {
+export default class DingtalkPlugin implements ChannelPlugin {
+  manifest: PluginManifest = {
+    name: 'dingtalk',
+    version: '1.0.0',
+    slot: 'channel',
+    description: '钉钉聊天平台适配器',
+  };
   readonly name = 'dingtalk';
   readonly type = 'dingtalk';
 
@@ -33,7 +40,7 @@ export class DingtalkAdapter implements ChannelAdapter {
       throw new Error('钉钉配置缺少 clientId 或 clientSecret');
     }
 
-    log.info('钉钉适配器已初始化');
+    log.info('钉钉插件已初始化');
   }
 
   async start(): Promise<void> {
@@ -80,7 +87,7 @@ export class DingtalkAdapter implements ChannelAdapter {
     this.healthy = false;
     this._accessToken = null;
     this._tokenExpiresAt = 0;
-    log.info('钉钉适配器已停止');
+    log.info('钉钉插件已停止');
   }
 
   async sendMessage(message: OutboundMessage): Promise<void> {

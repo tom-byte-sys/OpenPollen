@@ -1,6 +1,6 @@
 # HiveAgent 项目进度报告
 
-> 更新日期: 2026-02-15
+> 更新日期: 2026-02-16
 > 计划文件: [project-plan.md](./project-plan.md)
 
 ---
@@ -14,7 +14,7 @@
 |------|------|--------|
 | Phase 1 — MVP | 进行中 | ~90% |
 | Phase 2 — 技能系统 | 部分完成 | ~40% |
-| Phase 3 — 技能市场 + 开源 | 未开始 | 0% |
+| Phase 3 — 技能市场 | **已完成** | **~90%** |
 
 ---
 
@@ -118,9 +118,10 @@
 | `hiveagent stop` | 已完成 | PID 文件机制，支持优雅停止 |
 | `hiveagent status` | 已完成 | 通过 Gateway API 查询状态 |
 | `hiveagent config show` | 已完成 | 密钥脱敏显示 |
-| `hiveagent skill search` | 未完成 | 需要市场 API (Phase 3) |
-| `hiveagent skill publish` | 未完成 | 需要市场 API (Phase 3) |
-| `hiveagent skill earnings` | 未完成 | 需要市场 API (Phase 3) |
+| `hiveagent login` | 已完成 | 登录市场，JWT token 保存到 ~/.hiveagent/auth.json |
+| `hiveagent skill search` | 已完成 | 调用市场 API 搜索，支持 --category / --sort |
+| `hiveagent skill publish` | 已完成 | 交互式发布：选定价/分类/版本号 → 打包上传 → 提交审核 |
+| `hiveagent skill earnings` | 已完成 | 按月汇总显示净收入，支持 --month 指定月份 |
 | `hiveagent channel list/test` | 已完成 | 列出平台状态 / 发送测试消息 |
 | `hiveagent logs` | 已完成 | 支持级别过滤、行数限制、持续跟踪 |
 
@@ -168,18 +169,84 @@
 | .source.json 来源追踪 | 已完成 | marketplace / git / local |
 | 内置技能 code-review | 已完成 | skills/code-review/SKILL.md |
 | 内置技能 data-analyst | 已完成 | skills/data-analyst/SKILL.md |
-| 技能市场 CLI | 未开始 | search / publish / earnings (Phase 3) |
-| 技能市场 API | 未开始 | AgentTerm 后端扩展 (Phase 3) |
+| 技能市场 CLI | 已完成 | search / publish / earnings + login + install 市场支持 |
+| 技能市场 API | 已完成 | AgentTerm 后端 skill_marketplace 模块 |
+| MarketplaceClient | 已完成 | src/agent/marketplace-client.ts，封装所有市场 API |
+| installFromMarketplace | 已完成 | skill-manager.ts 新增方法，下载 tar.gz 解压安装 |
+| marketplace 配置 | 已完成 | schema.ts + hiveagent.json.example 新增 marketplace 段 |
 
 ---
 
-## Phase 3 — 技能市场 + 开源发布
+## Phase 3 — 技能市场
 
-全部未开始。包括：
-- AgentTerm 后端技能市场 API
-- 数据库表 (`lite_skills`, `lite_skill_versions` 等)
-- 付费/订阅/分成体系
-- 开源准备清单（README.en.md, CONTRIBUTING.md, SECURITY.md, GitHub Actions 等）
+> 实施日期: 2026-02-16
+
+### 后端（AgentTerm FastAPI）
+
+| 计划项 | 状态 | 说明 |
+|--------|------|------|
+| 数据库迁移 SQL | 已完成 | `008_create_skill_marketplace_tables.sql`，5 张表 |
+| SQLAlchemy 模型 | 已完成 | `app/models/skill_marketplace.py`，5 模型 + 4 枚举 |
+| 公开 API (搜索/详情/版本/评论/下载) | 已完成 | `app/api/v1/skill_marketplace.py` GET 端点 |
+| 发布/管理 API (CRUD + 审核) | 已完成 | POST/PUT/DELETE 端点 + admin 审核端点 |
+| 购买/收入 API | 已完成 | 购买创建订单、评论、收入汇总、购买历史 |
+| 业务服务层 | 已完成 | `app/services/skill_marketplace_service.py` |
+| 微信支付集成 | 已完成 | `payments.py` 回调/轮询增加 `skill_*` plan_code 分支 |
+| 路由注册 | 已完成 | `api/v1/__init__.py` 注册 prefix="/skills-market" |
+| 配置项 | 已完成 | `settings.py` 新增 SKILL_MARKETPLACE |
+
+**5 张数据库表：**
+- `lite_skills` — 技能定义（名称、分类、定价、状态、评分）
+- `lite_skill_versions` — 版本管理（semver、SKILL.md 内容、包文件）
+- `lite_skill_installs` — 安装/购买记录
+- `lite_skill_reviews` — 评分评论
+- `lite_skill_earnings` — 开发者收入（70/30 分成）
+
+**API 端点：**
+- `GET /skills` — 搜索/浏览（q, category, pricing_model, sort_by, 分页）
+- `GET /skills/{id}` — 详情
+- `GET /skills/{id}/versions` — 版本列表
+- `GET /skills/{id}/reviews` — 评论列表
+- `GET /skills/{id}/download` — 下载包
+- `POST /skills` — 发布新技能
+- `PUT /skills/{id}` — 更新技能
+- `POST /skills/{id}/versions` — 上传新版本
+- `DELETE /skills/{id}` — 下架
+- `POST /skills/{id}/purchase` — 购买
+- `GET /skills/{id}/purchase/status` — 购买状态
+- `POST /skills/{id}/reviews` — 提交评论
+- `GET /my/skills` — 我的技能
+- `GET /my/purchases` — 我的购买
+- `GET /my/earnings` — 收入概览
+- `GET /my/earnings/{month}` — 月度详情
+- `GET /admin/skills/pending` — 待审核
+- `POST /admin/skills/{id}/approve` — 审核通过
+- `POST /admin/skills/{id}/reject` — 拒绝
+
+### HiveAgent 前端
+
+| 计划项 | 状态 | 说明 |
+|--------|------|------|
+| MarketplaceClient | 已完成 | `src/agent/marketplace-client.ts` |
+| skill-manager 扩展 | 已完成 | `installFromMarketplace()` + `SkillSource.skillId` |
+| 配置扩展 | 已完成 | `MarketplaceConfigSchema` + `marketplace` 配置段 |
+| CLI login 命令 | 已完成 | 邮箱+密码登录，JWT 保存到 auth.json |
+| CLI skill search | 已完成 | 搜索市场，格式化输出 |
+| CLI skill publish | 已完成 | 交互式发布流程 |
+| CLI skill earnings | 已完成 | 收入概览 |
+| CLI skill install (市场) | 已完成 | 免费直接下载安装，付费创建支付订单 |
+| marketplace.html | 已完成 | 深色主题市场页面，搜索+分类+排序+卡片+详情弹窗 |
+| index.html 导航 | 已完成 | 添加"市场"链接 |
+| /market WebChat 命令 | 已完成 | router.ts 返回市场页面链接 |
+
+### 未完成项
+
+| 计划项 | 状态 | 说明 |
+|--------|------|------|
+| 开源准备 | 未开始 | README.en.md, CONTRIBUTING.md, SECURITY.md, GitHub Actions |
+| Docker 支持 | 未完成 | Dockerfile + docker-compose.yml |
+| 数据库迁移执行 | 待执行 | 需在 MySQL 上执行 008 SQL |
+| 端到端测试 | 待验证 | 发布→审核→搜索→购买→安装 完整流程 |
 
 ---
 
@@ -262,20 +329,21 @@ options['systemPrompt'] = {
 
 ## 下一步工作建议
 
-### 近期优先（Phase 1 收尾 → 100%）
+### 近期优先
 
-1. **钉钉适配器实测** — 配置钉钉测试应用进行实际消息流转验证
-2. **Docker 支持** — 编写 Dockerfile + docker-compose.yml，便于服务器部署
-3. **GitHub Actions CI** — 自动化 typecheck + test 流水线
+1. **执行数据库迁移** — 在 MySQL 上执行 `008_create_skill_marketplace_tables.sql`
+2. **端到端测试** — 完整验证 发布→审核→搜索→购买→安装 流程
+3. **Docker 支持** — 编写 Dockerfile + docker-compose.yml，便于服务器部署
+4. **GitHub Actions CI** — 自动化 typecheck + test 流水线
 
-### 中期目标（Phase 2）
+### 中期目标
 
-4. **更多聊天平台** — 企业微信、Telegram 适配器
-5. **记忆与 Agent 集成** — Agent 会话中自动读写记忆
-6. **插件系统实例** — 编写至少一个完整插件验证插件生命周期
+5. **更多聊天平台** — 企业微信、Telegram 适配器
+6. **记忆与 Agent 集成** — Agent 会话中自动读写记忆
+7. **插件系统实例** — 编写至少一个完整插件验证插件生命周期
 
-### 远期目标（Phase 3）
+### 开源准备
 
-7. **技能市场 API** — AgentTerm FastAPI 后端扩展
-8. **开源准备** — 英文 README、贡献指南、SECURITY.md
-9. **技能市场 CLI** — search / publish / earnings 命令
+8. **文档** — 英文 README、贡献指南、SECURITY.md
+9. **市场种子数据** — 发布几个官方技能到市场，验证展示效果
+10. **marketplace.html 部署** — 上线到 agent.beebywork.com

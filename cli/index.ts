@@ -9,9 +9,28 @@ import { fileURLToPath } from 'node:url';
 import { createHiveAgent } from '../src/index.js';
 import { loadConfig } from '../src/config/loader.js';
 import { SkillManager } from '../src/agent/skill-manager.js';
+import { MarketplaceClient } from '../src/agent/marketplace-client.js';
 import { maskSecret } from '../src/utils/crypto.js';
 
 const PID_FILE = resolve(homedir(), '.hiveagent', 'hiveagent.pid');
+const AUTH_FILE = resolve(homedir(), '.hiveagent', 'auth.json');
+
+function loadAuthToken(): string | null {
+  try {
+    if (!existsSync(AUTH_FILE)) return null;
+    const data = JSON.parse(readFileSync(AUTH_FILE, 'utf-8')) as { token?: string };
+    return data.token ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function createMarketplaceClient(configPath?: string): MarketplaceClient {
+  const config = loadConfig(configPath);
+  const apiUrl = config.marketplace?.apiUrl || 'https://lite.beebywork.com/api/v1/skills-market';
+  const token = loadAuthToken();
+  return new MarketplaceClient(apiUrl, token ?? undefined);
+}
 
 function writePidFile(): void {
   const dir = resolve(homedir(), '.hiveagent');
@@ -234,6 +253,61 @@ program
     rl.close();
   });
 
+// === login ===
+program
+  .command('login')
+  .description('登录到 HiveAgent 市场')
+  .action(async () => {
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    const ask = (q: string): Promise<string> =>
+      new Promise(resolve => rl.question(q, answer => resolve(answer.trim())));
+
+    try {
+      const email = await ask('邮箱: ');
+      const password = await ask('密码: ');
+
+      if (!email || !password) {
+        console.log('邮箱和密码不能为空');
+        rl.close();
+        return;
+      }
+
+      const config = loadConfig();
+      const backendUrl = config.gateway?.auth?.backendUrl || 'https://lite.beebywork.com/api/v1';
+
+      const response = await fetch(`${backendUrl}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json() as { detail?: string };
+        console.error('登录失败:', data.detail || '请检查邮箱和密码');
+        rl.close();
+        return;
+      }
+
+      const data = await response.json() as { access_token: string; token_type: string };
+
+      // 保存 token
+      const authDir = resolve(homedir(), '.hiveagent');
+      if (!existsSync(authDir)) mkdirSync(authDir, { recursive: true });
+      const authPath = resolve(authDir, 'auth.json');
+      writeFileSync(authPath, JSON.stringify({
+        token: data.access_token,
+        email,
+        loginAt: new Date().toISOString(),
+      }, null, 2));
+
+      console.log(`\n  登录成功! Token 已保存到 ${authPath}`);
+    } catch (error) {
+      console.error('登录失败:', error instanceof Error ? error.message : error);
+    } finally {
+      rl.close();
+    }
+  });
+
 // === stop ===
 program
   .command('stop')
@@ -350,7 +424,7 @@ skillCmd
   .command('install <nameOrPath>')
   .description('安装技能（市场名称 / Git URL / 本地路径）')
   .option('-c, --config <path>', '配置文件路径')
-  .action((nameOrPath: string, options: { config?: string }) => {
+  .action(async (nameOrPath: string, options: { config?: string }) => {
     const config = loadConfig(options.config);
     const manager = new SkillManager(config.skills.directory);
 
@@ -364,8 +438,83 @@ skillCmd
         const skill = manager.installFromGit(nameOrPath);
         console.log(`已安装 ${skill.name} 到 ${skill.directory}`);
       } else {
-        // 市场安装 (Phase 3)
-        console.log(`技能市场安装将在未来版本支持。技能名: ${nameOrPath}`);
+        // 市场安装
+        const client = createMarketplaceClient(options.config);
+        console.log(`正在从市场搜索 "${nameOrPath}" ...`);
+
+        const result = await client.search(nameOrPath, { pageSize: 5 });
+        const exact = result.items.find(s => s.name === nameOrPath);
+
+        if (!exact) {
+          if (result.items.length === 0) {
+            console.log(`未在市场中找到 "${nameOrPath}"。`);
+          } else {
+            console.log(`未找到精确匹配，相关结果:`);
+            for (const s of result.items) {
+              const priceStr = s.pricing_model === 'free' ? '免费' : `¥${s.price}`;
+              console.log(`  ${s.name} - ${s.display_name} (${priceStr})`);
+            }
+            console.log(`\n使用精确名称安装: hiveagent skill install <name>`);
+          }
+          return;
+        }
+
+        // 免费技能直接下载
+        if (exact.pricing_model === 'free') {
+          console.log(`正在下载 ${exact.display_name} ...`);
+          const pkg = await client.downloadPackage(exact.id);
+          const skill = manager.installFromMarketplace(exact.name, pkg, 'latest', exact.id);
+          console.log(`已安装 ${skill.name} 到 ${skill.directory}`);
+          return;
+        }
+
+        // 付费技能
+        const token = loadAuthToken();
+        if (!token) {
+          console.log(`技能 "${exact.display_name}" 需要付费 (¥${exact.price})。请先登录: hiveagent login`);
+          return;
+        }
+
+        // 检查是否已购买
+        const purchased = await client.checkPurchase(exact.id);
+        if (purchased) {
+          console.log(`已购买，正在下载 ${exact.display_name} ...`);
+          const pkg = await client.downloadPackage(exact.id);
+          const skill = manager.installFromMarketplace(exact.name, pkg, 'latest', exact.id);
+          console.log(`已安装 ${skill.name} 到 ${skill.directory}`);
+          return;
+        }
+
+        // 未购买，创建支付订单
+        const rl = createInterface({ input: process.stdin, output: process.stdout });
+        const confirm = await new Promise<string>(resolve =>
+          rl.question(`技能 "${exact.display_name}" 需要 ¥${exact.price}，是否购买? (y/N): `, answer => {
+            resolve(answer.trim().toLowerCase());
+            rl.close();
+          }),
+        );
+
+        if (confirm !== 'y') {
+          console.log('已取消。');
+          return;
+        }
+
+        console.log('正在创建支付订单...');
+        const purchase = await client.createPurchase(exact.id);
+
+        if (purchase.status === 'installed') {
+          console.log('购买成功! 正在下载...');
+          const pkg = await client.downloadPackage(exact.id);
+          const skill = manager.installFromMarketplace(exact.name, pkg, 'latest', exact.id);
+          console.log(`已安装 ${skill.name} 到 ${skill.directory}`);
+          return;
+        }
+
+        if (purchase.qr_code_url) {
+          console.log(`\n请使用微信扫描以下链接支付 ¥${purchase.amount}:`);
+          console.log(`  ${purchase.qr_code_url}`);
+          console.log('\n支付完成后，重新运行此命令完成安装。');
+        }
       }
     } catch (error) {
       console.error('安装失败:', error instanceof Error ? error.message : error);
@@ -426,24 +575,174 @@ skillCmd
 skillCmd
   .command('search <keyword>')
   .description('搜索官方技能市场')
-  .action((keyword: string) => {
-    console.log(`搜索 "${keyword}" ...`);
-    console.log('技能市场搜索将在未来版本支持。目前可通过 Git URL 或本地路径安装技能。');
+  .option('-c, --config <path>', '配置文件路径')
+  .option('--category <category>', '按分类过滤 (coding/writing/data/automation/other)')
+  .option('--sort <sort>', '排序方式 (downloads/rating/newest)', 'newest')
+  .action(async (keyword: string, options: { config?: string; category?: string; sort?: string }) => {
+    try {
+      const client = createMarketplaceClient(options.config);
+      console.log(`搜索 "${keyword}" ...\n`);
+
+      const result = await client.search(keyword, {
+        category: options.category,
+        sortBy: (options.sort as 'downloads' | 'rating' | 'newest') || 'newest',
+      });
+
+      if (result.items.length === 0) {
+        console.log('未找到相关技能。');
+        return;
+      }
+
+      console.log(`找到 ${result.total} 个技能:\n`);
+      for (let i = 0; i < result.items.length; i++) {
+        const s = result.items[i];
+        const priceStr = s.pricing_model === 'free' ? '免费' : `¥${s.price}`;
+        const ratingStr = s.rating_count > 0 ? `${s.avg_rating}/5` : '-';
+        const officialTag = s.is_official ? ' [官方]' : '';
+        console.log(`  ${i + 1}. ${s.name}${officialTag}`);
+        console.log(`     ${s.display_name} - ${s.description?.slice(0, 60) || ''}`);
+        console.log(`     评分: ${ratingStr} | 下载: ${s.download_count} | 价格: ${priceStr}`);
+        console.log('');
+      }
+
+      console.log(`安装: hiveagent skill install <name>`);
+    } catch (error) {
+      console.error('搜索失败:', error instanceof Error ? error.message : error);
+    }
   });
 
 skillCmd
   .command('publish <name>')
   .description('发布技能到官方市场')
-  .action((name: string) => {
-    console.log(`发布技能 "${name}" ...`);
-    console.log('技能市场发布将在未来版本支持。');
+  .option('-c, --config <path>', '配置文件路径')
+  .action(async (name: string, options: { config?: string }) => {
+    const token = loadAuthToken();
+    if (!token) {
+      console.log('请先登录: hiveagent login');
+      return;
+    }
+
+    const config = loadConfig(options.config);
+    const manager = new SkillManager(config.skills.directory);
+    manager.discover();
+
+    const skill = manager.get(name);
+    if (!skill) {
+      console.error(`技能不存在: ${name}。请先创建或安装此技能。`);
+      return;
+    }
+
+    const skillMdContent = manager.getSkillContent(name);
+    if (!skillMdContent) {
+      console.error(`无法读取 SKILL.md: ${name}`);
+      return;
+    }
+
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    const ask = (q: string): Promise<string> =>
+      new Promise(resolve => rl.question(q, answer => resolve(answer.trim())));
+
+    try {
+      console.log(`\n发布技能: ${skill.name}`);
+      console.log(`描述: ${skill.description}\n`);
+
+      // 选择定价模式
+      console.log('定价模式:');
+      console.log('  1. 免费');
+      console.log('  2. 一次性付费');
+      console.log('  3. 订阅制');
+      const pricingChoice = await ask('请选择 (1-3): ');
+      const pricingMap: Record<string, string> = { '1': 'free', '2': 'one_time', '3': 'subscription' };
+      const pricingModel = pricingMap[pricingChoice] || 'free';
+
+      let price = 0;
+      if (pricingModel !== 'free') {
+        const priceStr = await ask('价格（元）: ');
+        price = parseFloat(priceStr) || 0;
+      }
+
+      // 选择分类
+      console.log('\n分类:');
+      console.log('  1. coding (编程)');
+      console.log('  2. writing (写作)');
+      console.log('  3. data (数据)');
+      console.log('  4. automation (自动化)');
+      console.log('  5. other (其他)');
+      const catChoice = await ask('请选择 (1-5): ');
+      const catMap: Record<string, string> = { '1': 'coding', '2': 'writing', '3': 'data', '4': 'automation', '5': 'other' };
+      const category = catMap[catChoice] || 'other';
+
+      const version = await ask('版本号 (如 1.0.0): ') || '1.0.0';
+
+      const client = createMarketplaceClient(options.config);
+      console.log('\n正在发布...');
+
+      // 创建技能
+      const published = await client.publish({
+        name: skill.name,
+        display_name: skill.name,
+        description: skill.description,
+        category,
+        pricing_model: pricingModel,
+        price,
+      });
+
+      // 打包技能目录
+      const { execSync: execSyncLocal } = await import('node:child_process');
+      const tmpTar = resolve(skill.directory, '..', `${name}.tar.gz`);
+      execSyncLocal(`tar -czf ${tmpTar} -C ${skill.directory} .`, { stdio: 'pipe' });
+      const packageData = readFileSync(tmpTar);
+
+      // 上传版本
+      await client.uploadVersion(published.id, Buffer.from(packageData), version, '初始版本', skillMdContent);
+
+      // 清理临时文件
+      try { unlinkSync(tmpTar); } catch { /* ignore */ }
+
+      console.log(`\n技能已提交审核!`);
+      console.log(`  名称: ${published.name}`);
+      console.log(`  ID: ${published.id}`);
+      console.log(`  状态: 待审核`);
+      console.log('\n审核通过后将在市场中可见。');
+    } catch (error) {
+      console.error('发布失败:', error instanceof Error ? error.message : error);
+    } finally {
+      rl.close();
+    }
   });
 
 skillCmd
   .command('earnings')
   .description('查看开发者技能收入')
-  .action(() => {
-    console.log('技能收入查看将在未来版本支持。');
+  .option('-c, --config <path>', '配置文件路径')
+  .option('--month <month>', '指定月份 (如 2026-02)')
+  .action(async (options: { config?: string; month?: string }) => {
+    const token = loadAuthToken();
+    if (!token) {
+      console.log('请先登录: hiveagent login');
+      return;
+    }
+
+    try {
+      const client = createMarketplaceClient(options.config);
+      const earnings = await client.getEarnings(options.month);
+
+      if (!earnings || earnings.length === 0) {
+        console.log('暂无收入记录。');
+        return;
+      }
+
+      console.log('\n技能收入概览:\n');
+      let totalAll = 0;
+      for (const e of earnings) {
+        console.log(`  ${e.month}`);
+        console.log(`    安装数: ${e.install_count} | 总收入: ¥${e.author_earning.toFixed(2)} (扣除平台费 ¥${e.platform_fee.toFixed(2)})`);
+        totalAll += e.author_earning;
+      }
+      console.log(`\n  累计净收入: ¥${totalAll.toFixed(2)}`);
+    } catch (error) {
+      console.error('查询失败:', error instanceof Error ? error.message : error);
+    }
   });
 
 // === channel ===

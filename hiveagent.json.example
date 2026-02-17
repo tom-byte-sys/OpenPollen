@@ -35,7 +35,17 @@
     },
     "webchat": {
       "enabled": true,
-      "port": 3001
+      "port": 3001,
+      "assistantName": "HiveAgent"
+    },
+    "wechat": {
+      "enabled": false,
+      "corpId": "${WECHAT_CORP_ID}",
+      "agentId": "${WECHAT_AGENT_ID}",
+      "secret": "${WECHAT_SECRET}",
+      "token": "${WECHAT_TOKEN}",
+      "encodingAESKey": "${WECHAT_ENCODING_AES_KEY}",
+      "callbackPort": 3002
     }
   },
 
@@ -74,5 +84,9 @@
   "logging": {
     "level": "info",
     "file": "~/.hiveagent/logs/hiveagent.log"
+  },
+
+  "marketplace": {
+    "apiUrl": "https://lite.beebywork.com/api/v1/skills-market"
   }
 }

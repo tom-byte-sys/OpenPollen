@@ -1,0 +1,82 @@
+/* @vitest-environment jsdom */
+
+import { describe, expect, it, vi } from "vitest";
+import { CONTROL_UI_BOOTSTRAP_CONFIG_PATH } from "../../shared/gateway/control-ui-contract.js";
+import { loadControlUiBootstrapConfig } from "./control-ui-bootstrap.ts";
+
+describe("loadControlUiBootstrapConfig", () => {
+  it("loads assistant identity from the bootstrap endpoint", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        basePath: "/hiveagent",
+        assistantName: "Ops",
+        assistantAvatar: "O",
+        assistantAgentId: "main",
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    const state = {
+      basePath: "/hiveagent",
+      assistantName: "Assistant",
+      assistantAvatar: null,
+      assistantAgentId: null,
+    };
+
+    await loadControlUiBootstrapConfig(state);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/hiveagent${CONTROL_UI_BOOTSTRAP_CONFIG_PATH}`,
+      expect.objectContaining({ method: "GET" }),
+    );
+    expect(state.assistantName).toBe("Ops");
+    expect(state.assistantAvatar).toBe("O");
+    expect(state.assistantAgentId).toBe("main");
+
+    vi.unstubAllGlobals();
+  });
+
+  it("ignores failures", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false });
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    const state = {
+      basePath: "",
+      assistantName: "Assistant",
+      assistantAvatar: null,
+      assistantAgentId: null,
+    };
+
+    await loadControlUiBootstrapConfig(state);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      CONTROL_UI_BOOTSTRAP_CONFIG_PATH,
+      expect.objectContaining({ method: "GET" }),
+    );
+    expect(state.assistantName).toBe("Assistant");
+
+    vi.unstubAllGlobals();
+  });
+
+  it("normalizes trailing slash basePath for bootstrap fetch path", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false });
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    const state = {
+      basePath: "/hiveagent/",
+      assistantName: "Assistant",
+      assistantAvatar: null,
+      assistantAgentId: null,
+    };
+
+    await loadControlUiBootstrapConfig(state);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/hiveagent${CONTROL_UI_BOOTSTRAP_CONFIG_PATH}`,
+      expect.objectContaining({ method: "GET" }),
+    );
+
+    vi.unstubAllGlobals();
+  });
+});

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DingtalkAdapter } from '../../src/channels/dingtalk/index.js';
+import DingtalkPlugin from '../../plugins/dingtalk/index.js';
 
 // Mock dingtalk-stream module
 vi.mock('dingtalk-stream', () => ({
@@ -19,54 +19,67 @@ vi.mock('dingtalk-stream', () => ({
         // Mock disconnect
       }
 
+      socketCallBackResponse(_messageId: string, _result: unknown): void {
+        // Mock ACK
+      }
+
       // Test helper to simulate incoming message
       async simulateMessage(data: Record<string, unknown>): Promise<void> {
         const handler = this.callbacks.get('/v1.0/im/bot/messages/get');
         if (handler) {
-          await handler({ data: JSON.stringify(data), headers: {} });
+          await handler({ data: JSON.stringify(data), headers: { messageId: 'test-msg-id' } });
         }
       }
     },
   },
 }));
 
-describe('DingtalkAdapter', () => {
-  let adapter: DingtalkAdapter;
+describe('DingtalkPlugin', () => {
+  let plugin: DingtalkPlugin;
 
   beforeEach(() => {
-    adapter = new DingtalkAdapter();
+    plugin = new DingtalkPlugin();
+  });
+
+  it('should have correct manifest', () => {
+    expect(plugin.manifest).toEqual({
+      name: 'dingtalk',
+      version: '1.0.0',
+      slot: 'channel',
+      description: '钉钉聊天平台适配器',
+    });
   });
 
   it('should initialize with valid config', async () => {
-    await adapter.initialize({
+    await plugin.initialize({
       clientId: 'test-client-id',
       clientSecret: 'test-client-secret',
       groupPolicy: 'mention',
     });
 
-    expect(adapter.name).toBe('dingtalk');
-    expect(adapter.type).toBe('dingtalk');
+    expect(plugin.name).toBe('dingtalk');
+    expect(plugin.type).toBe('dingtalk');
   });
 
   it('should reject initialization without credentials', async () => {
     await expect(
-      adapter.initialize({ clientId: '', clientSecret: '' }),
+      plugin.initialize({ clientId: '', clientSecret: '' }),
     ).rejects.toThrow('钉钉配置缺少 clientId 或 clientSecret');
   });
 
   it('should report unhealthy before start', () => {
-    expect(adapter.isHealthy()).toBe(false);
+    expect(plugin.isHealthy()).toBe(false);
   });
 
   it('should accept message handler', async () => {
-    await adapter.initialize({
+    await plugin.initialize({
       clientId: 'test-client-id',
       clientSecret: 'test-client-secret',
       groupPolicy: 'mention',
     });
 
     const handler = vi.fn();
-    adapter.onMessage(handler);
+    plugin.onMessage(handler);
 
     // Handler should be registered (we can't easily test the full flow
     // without starting, but we verify no error)

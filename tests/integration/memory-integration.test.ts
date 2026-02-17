@@ -354,4 +354,242 @@ describe('Memory Integration', () => {
       expect(deleteCalls[1][1]).toBe('summary:1000');
     });
   });
+
+  describe('Session Commands (/new and /resume)', () => {
+    it('/new should archive current session and clear it', async () => {
+      mockQueryResult.mockReturnValue(makeSDKStream([
+        { type: 'system', subtype: 'init', model: 'test', tools: [], skills: [] },
+        { type: 'result', session_id: 'sdk-session-abc', total_cost_usd: 0.01, result: 'Hello!' },
+      ]));
+
+      const config = createConfig();
+      const skillManager = new SkillManager(config.skills.directory);
+      const runner = new AgentRunner({ config, skillManager, memory });
+      const sessionManager = new SessionManager({ timeoutMinutes: 30, maxConcurrent: 50 });
+      const router = new MessageRouter({ sessionManager, agentRunner: runner, memory });
+
+      // First, send a normal message to establish a session
+      await router.handleMessage(createInboundMessage({ content: { type: 'text', text: 'Hi there' } }));
+
+      // Reset mock tracking
+      memory.set.mockClear();
+      memory.delete.mockClear();
+      // Return existing history entry when checked
+      memory.get.mockResolvedValue(JSON.stringify({
+        sdkSessionId: 'sdk-session-abc',
+        createdAt: 1000,
+        lastActiveAt: 2000,
+        preview: 'Hi there',
+      }));
+
+      // Send /new command
+      const result = await router.handleMessage(createInboundMessage({
+        content: { type: 'text', text: '/new' },
+      }));
+
+      expect(result).toBe('会话已重置，下次消息将开始新对话');
+      // Should have deleted the active session record
+      expect(memory.delete).toHaveBeenCalledWith('sdk-sessions', 'webchat:dm:user-123');
+      // Session should be removed from SessionManager
+      expect(sessionManager.size).toBe(0);
+    });
+
+    it('/new should handle no active SDK session gracefully', async () => {
+      const config = createConfig();
+      const skillManager = new SkillManager(config.skills.directory);
+      const runner = new AgentRunner({ config, skillManager, memory });
+      const sessionManager = new SessionManager({ timeoutMinutes: 30, maxConcurrent: 50 });
+      const router = new MessageRouter({ sessionManager, agentRunner: runner, memory });
+
+      const result = await router.handleMessage(createInboundMessage({
+        content: { type: 'text', text: '/new' },
+      }));
+
+      expect(result).toBe('会话已重置，下次消息将开始新对话');
+    });
+
+    it('/resume should list history sessions sorted by lastActiveAt desc', async () => {
+      const historyEntries: MemoryEntry[] = [
+        {
+          key: 'sdk-session-1',
+          value: JSON.stringify({ sdkSessionId: 'sdk-session-1', createdAt: 1000, lastActiveAt: 1708000000000, preview: '你好啊' }),
+          namespace: 'sdk-session-history:user-123',
+          createdAt: 1000,
+          updatedAt: 1000,
+        },
+        {
+          key: 'sdk-session-2',
+          value: JSON.stringify({ sdkSessionId: 'sdk-session-2', createdAt: 2000, lastActiveAt: 1708100000000, preview: '请记住我最喜欢的水果是芒果' }),
+          namespace: 'sdk-session-history:user-123',
+          createdAt: 2000,
+          updatedAt: 2000,
+        },
+      ];
+      memory.list.mockResolvedValue(historyEntries);
+
+      const config = createConfig();
+      const skillManager = new SkillManager(config.skills.directory);
+      const runner = new AgentRunner({ config, skillManager, memory });
+      const sessionManager = new SessionManager({ timeoutMinutes: 30, maxConcurrent: 50 });
+      const router = new MessageRouter({ sessionManager, agentRunner: runner, memory });
+
+      const result = await router.handleMessage(createInboundMessage({
+        content: { type: 'text', text: '/resume' },
+      }));
+
+      expect(result).toContain('历史会话列表');
+      // sdk-session-2 has later lastActiveAt, so it should be #1
+      expect(result).toContain('1.');
+      expect(result).toContain('请记住我最喜欢的水果是芒果');
+      expect(result).toContain('2.');
+      expect(result).toContain('你好啊');
+      expect(result).toContain('发送 /resume 1 恢复对应会话');
+    });
+
+    it('/resume should return message when no history exists', async () => {
+      memory.list.mockResolvedValue([]);
+
+      const config = createConfig();
+      const skillManager = new SkillManager(config.skills.directory);
+      const runner = new AgentRunner({ config, skillManager, memory });
+      const sessionManager = new SessionManager({ timeoutMinutes: 30, maxConcurrent: 50 });
+      const router = new MessageRouter({ sessionManager, agentRunner: runner, memory });
+
+      const result = await router.handleMessage(createInboundMessage({
+        content: { type: 'text', text: '/resume' },
+      }));
+
+      expect(result).toBe('没有历史会话记录');
+    });
+
+    it('/resume N should restore the specified session', async () => {
+      const historyEntries: MemoryEntry[] = [
+        {
+          key: 'sdk-session-old',
+          value: JSON.stringify({ sdkSessionId: 'sdk-session-old', createdAt: 1000, lastActiveAt: 1708000000000, preview: '旧会话' }),
+          namespace: 'sdk-session-history:user-123',
+          createdAt: 1000,
+          updatedAt: 1000,
+        },
+        {
+          key: 'sdk-session-new',
+          value: JSON.stringify({ sdkSessionId: 'sdk-session-new', createdAt: 2000, lastActiveAt: 1708100000000, preview: '新会话' }),
+          namespace: 'sdk-session-history:user-123',
+          createdAt: 2000,
+          updatedAt: 2000,
+        },
+      ];
+      memory.list.mockResolvedValue(historyEntries);
+
+      const config = createConfig();
+      const skillManager = new SkillManager(config.skills.directory);
+      const runner = new AgentRunner({ config, skillManager, memory });
+      const sessionManager = new SessionManager({ timeoutMinutes: 30, maxConcurrent: 50 });
+      const router = new MessageRouter({ sessionManager, agentRunner: runner, memory });
+
+      // Resume session #2 (which is sdk-session-old, since sorted by lastActiveAt desc)
+      const result = await router.handleMessage(createInboundMessage({
+        content: { type: 'text', text: '/resume 2' },
+      }));
+
+      expect(result).toBe('已恢复会话 #2');
+      // Should persist the restored session ID
+      expect(memory.set).toHaveBeenCalledWith('sdk-sessions', 'webchat:dm:user-123', 'sdk-session-old');
+    });
+
+    it('/resume N should reject invalid index', async () => {
+      const historyEntries: MemoryEntry[] = [
+        {
+          key: 'sdk-session-1',
+          value: JSON.stringify({ sdkSessionId: 'sdk-session-1', createdAt: 1000, lastActiveAt: 1000, preview: 'test' }),
+          namespace: 'sdk-session-history:user-123',
+          createdAt: 1000,
+          updatedAt: 1000,
+        },
+      ];
+      memory.list.mockResolvedValue(historyEntries);
+
+      const config = createConfig();
+      const skillManager = new SkillManager(config.skills.directory);
+      const runner = new AgentRunner({ config, skillManager, memory });
+      const sessionManager = new SessionManager({ timeoutMinutes: 30, maxConcurrent: 50 });
+      const router = new MessageRouter({ sessionManager, agentRunner: runner, memory });
+
+      const result = await router.handleMessage(createInboundMessage({
+        content: { type: 'text', text: '/resume 5' },
+      }));
+
+      expect(result).toBe('无效的会话编号，请输入 1 到 1 之间的数字');
+    });
+  });
+
+  describe('Session History Auto-Update (Runner)', () => {
+    it('should create session history entry on first SDK result', async () => {
+      mockQueryResult.mockReturnValue(makeSDKStream([
+        { type: 'system', subtype: 'init', model: 'test', tools: [], skills: [] },
+        { type: 'result', session_id: 'new-sdk-session', total_cost_usd: 0.01, result: 'Hello!' },
+      ]));
+
+      // memory.get returns null for history (first time)
+      memory.get.mockResolvedValue(null);
+
+      const config = createConfig();
+      const skillManager = new SkillManager(config.skills.directory);
+      const runner = new AgentRunner({ config, skillManager, memory });
+
+      const session = createSession();
+      await runner.run(session, '这是一条较长的消息用来测试preview截断功能是否正常工作超过五十个字符后面应该被截断掉');
+
+      // Should have created a history entry
+      const historyCalls = memory.set.mock.calls.filter(
+        (call: unknown[]) => (call[0] as string).startsWith('sdk-session-history:'),
+      );
+      expect(historyCalls.length).toBe(1);
+      expect(historyCalls[0][0]).toBe('sdk-session-history:user-123');
+      expect(historyCalls[0][1]).toBe('new-sdk-session');
+
+      const entryData = JSON.parse(historyCalls[0][2] as string);
+      expect(entryData.sdkSessionId).toBe('new-sdk-session');
+      expect(entryData.preview.length).toBeLessThanOrEqual(50);
+      expect(entryData.createdAt).toBeDefined();
+      expect(entryData.lastActiveAt).toBeDefined();
+    });
+
+    it('should update lastActiveAt on subsequent SDK results', async () => {
+      const existingEntry = JSON.stringify({
+        sdkSessionId: 'existing-sdk-session',
+        createdAt: 1000,
+        lastActiveAt: 1000,
+        preview: '原始消息',
+      });
+
+      // First call: memory.get for sdk-sessions returns null (no active session)
+      // Second call: memory.get for history returns existing entry
+      memory.get
+        .mockResolvedValueOnce(null)  // sdk-sessions lookup
+        .mockResolvedValueOnce(existingEntry);  // history lookup
+
+      mockQueryResult.mockReturnValue(makeSDKStream([
+        { type: 'system', subtype: 'init', model: 'test', tools: [], skills: [] },
+        { type: 'result', session_id: 'existing-sdk-session', total_cost_usd: 0.01, result: 'Updated!' },
+      ]));
+
+      const config = createConfig();
+      const skillManager = new SkillManager(config.skills.directory);
+      const runner = new AgentRunner({ config, skillManager, memory });
+
+      const session = createSession();
+      await runner.run(session, '新消息');
+
+      // Should have updated the history entry
+      const historyCalls = memory.set.mock.calls.filter(
+        (call: unknown[]) => (call[0] as string).startsWith('sdk-session-history:'),
+      );
+      expect(historyCalls.length).toBe(1);
+
+      const updated = JSON.parse(historyCalls[0][2] as string);
+      expect(updated.preview).toBe('原始消息'); // preview should not change
+      expect(updated.lastActiveAt).toBeGreaterThan(1000); // lastActiveAt should be updated
+    });
+  });
 });

@@ -8,7 +8,7 @@ import { AgentRunner } from './agent/runner.js';
 import { SkillManager } from './agent/skill-manager.js';
 import { PluginRegistry } from './plugins/registry.js';
 import { loadPluginsFromDirectory } from './plugins/loader.js';
-import { DingtalkAdapter } from './channels/dingtalk/index.js';
+import { isChannelPlugin } from './plugins/types.js';
 import { WebchatAdapter } from './channels/webchat/index.js';
 import { SqliteMemoryStore } from './memory/sqlite-store.js';
 import { FileMemoryStore } from './memory/file-store.js';
@@ -51,7 +51,15 @@ export async function createHiveAgent(configPath?: string): Promise<HiveAgentIns
   // 5. 初始化插件注册中心并加载插件
   const pluginRegistry = new PluginRegistry();
   const pluginsDir = resolve(import.meta.dirname ?? '.', '..', 'plugins');
-  await loadPluginsFromDirectory(pluginsDir, pluginRegistry);
+
+  // 构建插件配置（从 channels 配置中提取已启用的非内置渠道）
+  const pluginConfigs: Record<string, Record<string, unknown>> = {};
+  for (const [name, channelConfig] of Object.entries(config.channels)) {
+    if (name !== 'webchat' && channelConfig && (channelConfig as Record<string, unknown>).enabled) {
+      pluginConfigs[name] = channelConfig as Record<string, unknown>;
+    }
+  }
+  await loadPluginsFromDirectory(pluginsDir, pluginRegistry, pluginConfigs);
 
   // 6. 初始化 Agent Runner
   const agentRunner = new AgentRunner({ config, skillManager, memory });
@@ -71,25 +79,19 @@ export async function createHiveAgent(configPath?: string): Promise<HiveAgentIns
   // 10. 初始化 Channel 适配器
   const channels: ChannelAdapter[] = [];
 
-  if (config.channels.dingtalk?.enabled) {
-    const dingtalk = new DingtalkAdapter();
-    await dingtalk.initialize(config.channels.dingtalk as unknown as Record<string, unknown>);
-    dingtalk.onMessage(async (msg) => {
-      return await router.handleMessage(msg);
-    });
-    channels.push(dingtalk);
-    mainLog.info('钉钉 Channel 已配置');
-  }
-
   if (config.channels.webchat?.enabled) {
     const webchat = new WebchatAdapter();
     await webchat.initialize(config.channels.webchat as unknown as Record<string, unknown>);
-    webchat.onMessage(async (msg) => {
-      const response = await router.handleMessage(msg);
-      return response as unknown as void;
-    });
+    webchat.inject({ router, sessionManager: router.sessionManager, memory: router.memory });
     channels.push(webchat);
     mainLog.info('WebChat Channel 已配置');
+  }
+
+  // 11. 动态接入渠道插件
+  const channelPlugins = pluginRegistry.list('channel').filter(isChannelPlugin);
+  for (const cp of channelPlugins) {
+    cp.onMessage(async (msg, onChunk) => await router.handleMessage(msg, onChunk));
+    mainLog.info({ channel: cp.name }, 'Channel 插件已配置');
   }
 
   return {
@@ -118,7 +120,7 @@ export async function createHiveAgent(configPath?: string): Promise<HiveAgentIns
 
       mainLog.info({
         gateway: `http://${config.gateway.host}:${config.gateway.port}`,
-        channels: channels.map(c => c.name),
+        channels: [...channels.map(c => c.name), ...channelPlugins.map(cp => cp.name)],
         skills: skillManager.list().map(s => s.name),
       }, 'HiveAgent 已启动');
     },

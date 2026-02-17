@@ -17,6 +17,7 @@ export interface SkillSource {
   type: 'marketplace' | 'git' | 'local';
   version?: string;
   url?: string;
+  skillId?: string;
 }
 
 interface SkillFrontmatter {
@@ -169,6 +170,51 @@ export class SkillManager {
     writeFileSync(join(targetDir, '.source.json'), JSON.stringify(source, null, 2));
 
     log.info({ skill: name, from: url }, '技能已安装（Git）');
+
+    this.discover();
+    return this.skills.get(name)!;
+  }
+
+  /**
+   * 从市场安装技能（tar.gz 包）
+   */
+  installFromMarketplace(name: string, packageData: Buffer, version: string, skillId: string): SkillInfo {
+    const targetDir = resolve(this.skillsDir, name);
+    if (existsSync(targetDir)) {
+      throw new Error(`技能已存在: ${name}`);
+    }
+
+    mkdirSync(targetDir, { recursive: true });
+
+    // 解压 tar.gz 到技能目录
+    try {
+      const tarPath = join(targetDir, '_package.tar.gz');
+      writeFileSync(tarPath, packageData);
+      execSync(`tar -xzf ${tarPath} -C ${targetDir}`, { stdio: 'pipe' });
+      // 清理临时文件
+      if (existsSync(tarPath)) {
+        rmSync(tarPath);
+      }
+    } catch (error) {
+      // 清理残留
+      if (existsSync(targetDir)) {
+        rmSync(targetDir, { recursive: true, force: true });
+      }
+      throw new Error(`解压包失败: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    // 验证 SKILL.md 存在
+    const skillMdPath = join(targetDir, 'SKILL.md');
+    if (!existsSync(skillMdPath)) {
+      rmSync(targetDir, { recursive: true, force: true });
+      throw new Error(`包中未找到 SKILL.md`);
+    }
+
+    // 写入来源信息
+    const source: SkillSource = { type: 'marketplace', version, skillId };
+    writeFileSync(join(targetDir, '.source.json'), JSON.stringify(source, null, 2));
+
+    log.info({ skill: name, version, skillId }, '技能已安装（市场）');
 
     this.discover();
     return this.skills.get(name)!;

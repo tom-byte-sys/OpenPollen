@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:ui": "npx vite build --config ui/vite.config.ts ui",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "lint": "eslint src/ cli/ --ext .ts",
@@ -52,12 +53,16 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@noble/ed25519": "^3.0.0",
     "@types/node": "^22.0.0",
     "@types/uuid": "^10.0.0",
     "@types/ws": "^8.5.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
+    "dompurify": "^3.3.1",
     "eslint": "^9.0.0",
+    "lit": "^3.3.2",
+    "marked": "^17.0.2",
     "tsx": "^4.0.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"

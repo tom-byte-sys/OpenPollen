@@ -45,11 +45,23 @@ export const DingtalkChannelSchema = Type.Object({
 export const WebchatChannelSchema = Type.Object({
   enabled: Type.Boolean({ default: true }),
   port: Type.Number({ default: 3001 }),
+  assistantName: Type.Optional(Type.String({ default: 'HiveAgent' })),
+});
+
+export const WechatChannelSchema = Type.Object({
+  enabled: Type.Boolean({ default: false }),
+  corpId: Type.String(),
+  agentId: Type.String(),
+  secret: Type.String(),
+  token: Type.String(),
+  encodingAESKey: Type.String(),
+  callbackPort: Type.Number({ default: 3002 }),
 });
 
 export const ChannelsConfigSchema = Type.Object({
   dingtalk: Type.Optional(DingtalkChannelSchema),
   webchat: Type.Optional(WebchatChannelSchema),
+  wechat: Type.Optional(WechatChannelSchema),
 });
 
 export const ProviderSchema = Type.Object({
@@ -92,6 +104,10 @@ export const LoggingConfigSchema = Type.Object({
   file: Type.Optional(Type.String()),
 });
 
+export const MarketplaceConfigSchema = Type.Object({
+  apiUrl: Type.String({ default: 'https://lite.beebywork.com/api/v1/skills-market' }),
+});
+
 export const AppConfigSchema = Type.Object({
   agent: AgentConfigSchema,
   gateway: GatewayConfigSchema,
@@ -100,6 +116,7 @@ export const AppConfigSchema = Type.Object({
   skills: SkillsConfigSchema,
   memory: MemoryConfigSchema,
   logging: LoggingConfigSchema,
+  marketplace: Type.Optional(MarketplaceConfigSchema),
 });
 
 export type AgentConfig = Static<typeof AgentConfigSchema>;
@@ -109,4 +126,5 @@ export type ProvidersConfig = Static<typeof ProvidersConfigSchema>;
 export type SkillsConfig = Static<typeof SkillsConfigSchema>;
 export type MemoryConfig = Static<typeof MemoryConfigSchema>;
 export type LoggingConfig = Static<typeof LoggingConfigSchema>;
+export type MarketplaceConfig = Static<typeof MarketplaceConfigSchema>;
 export type AppConfig = Static<typeof AppConfigSchema>;
