@@ -140,15 +140,15 @@ HiveAgent/
 
 ### 模型 API 连接超时
 
-如果在国内无法直接访问 Anthropic API，可以配置 AgentTerm 代理：
+如果在国内无法直接访问 Anthropic API，可以配置 Beelive 平台代理：
 
 ```json5
 {
   "providers": {
-    "agentterm": {
+    "beelive": {
       "enabled": true,
-      "apiKey": "your-agentterm-key",
-      "baseUrl": "https://lite.beebywork.com/api/v1/anthropic-proxy"
+      "apiKey": "your-beelive-key",
+      "baseUrl": "https://your-beelive-server.com/api/v1/anthropic-proxy"
     }
   }
 }

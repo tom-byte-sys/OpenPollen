@@ -61,14 +61,14 @@ hiveagent init
 
 ```
 选择 AI 模型来源:
-  1. AgentTerm 云端托管 (推荐，无需翻墙，按量计费)
+  1. Beelive 云端托管 (推荐，无需翻墙，按量计费)
   2. 自有 API Key (Anthropic)
   3. 本地模型 (Ollama)
 ```
 
 | 选项 | 说明 | 需要准备 |
 |------|------|---------|
-| AgentTerm 云端 | 通过代理访问 Claude，国内可用 | AgentTerm API Key |
+| Beelive 云端 | 通过代理访问 Claude，国内可用 | Beelive API Key |
 | Anthropic | 直连 Anthropic API | Anthropic API Key (`sk-ant-...`) |
 | Ollama | 完全本地离线运行 | 安装 [Ollama](https://ollama.ai) 并拉取模型 |
 
@@ -206,9 +206,9 @@ hiveagent logs -l error      # 只看错误日志
     }
   },
   "providers": {
-    "agentterm": {
+    "beelive": {
       "enabled": true,
-      "apiKey": "${AGENTTERM_API_KEY}"
+      "apiKey": "${BEELIVE_API_KEY}"
     },
     "anthropic": {
       "enabled": false,

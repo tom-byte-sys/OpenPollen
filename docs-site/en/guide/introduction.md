@@ -7,7 +7,7 @@ HiveAgent is a secure, easy-to-use, China-ready AI Agent platform built on the [
 - **Plug and play**: One command to initialize, auto-configured WebChat interface
 - **Unified channels**: Same Agent serves WebChat, DingTalk, WeCom simultaneously
 - **Extensible skills**: SKILL.md open standard for defining Agent capabilities
-- **China-friendly**: Access Claude models without VPN via AgentTerm proxy
+- **China-friendly**: Access Claude models without VPN via Beelive proxy
 - **Enterprise security**: API Key / JWT auth, tool whitelisting, concurrency control, budget limits
 
 ## Core Concepts

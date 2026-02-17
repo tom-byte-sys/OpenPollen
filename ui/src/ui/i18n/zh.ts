@@ -396,6 +396,7 @@ export const zh: Translations = {
   'skills.name': '名称',
   'skills.namePlaceholder': '技能名称',
   'skills.marketplace': '市场',
+  'skills.browseMarketplace': '浏览技能市场',
   'skills.available': '可用',
   'skills.manage': '管理',
 
@@ -867,6 +868,19 @@ export const zh: Translations = {
   'config.nav.tools': '工具',
   'config.nav.gateway': '网关',
   'config.nav.setupWizard': '设置向导',
+  'config.nav.agent': '智能体',
+  'config.nav.providers': '提供商',
+  'config.nav.memory': '记忆',
+  'config.nav.logging': '日志',
+  'config.nav.marketplace': '市场',
+  'config.section.agent': '智能体',
+  'config.section.agentDesc': '智能体模型、工具和行为配置。',
+  'config.section.providers': '提供商',
+  'config.section.providersDesc': 'AI 提供商连接和 API 密钥。',
+  'config.section.memory': '记忆',
+  'config.section.memoryDesc': '记忆存储和检索设置。',
+  'config.section.marketplace': '市场',
+  'config.section.marketplaceDesc': '插件和技能市场。',
 
   // ── usage (extra) ────────────────────────────────
   'usage.tokenUsage': '令牌用量',

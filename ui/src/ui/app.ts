@@ -299,6 +299,7 @@ export class HiveAgentApp extends LitElement {
   @state() skillEdits: Record<string, string> = {};
   @state() skillsBusyKey: string | null = null;
   @state() skillMessages: Record<string, SkillMessage> = {};
+  marketplaceUrl = "";
 
   @state() debugLoading = false;
   @state() debugStatus: StatusSummary | null = null;

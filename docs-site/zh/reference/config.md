@@ -89,15 +89,15 @@ Gateway HTTP 服务配置。
 
 模型提供商配置。支持同时配置多个，第一个 `enabled: true` 的将被使用。
 
-### providers.agentterm
+### providers.beelive
 
-AgentTerm 云端代理（推荐国内用户）。
+Beelive 云端代理（推荐国内用户）。
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `enabled` | boolean | `false` | 是否启用 |
-| `apiKey` | string | — | AgentTerm API Key |
-| `baseUrl` | string | `https://lite.beebywork.com/api/v1/anthropic-proxy` | 代理地址 |
+| `apiKey` | string | — | Beelive API Key |
+| `baseUrl` | string | `https://your-beelive-server.com/api/v1/anthropic-proxy` | 代理地址 |
 
 ### providers.anthropic
 
@@ -161,7 +161,7 @@ OpenAI 兼容 API。
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `apiUrl` | string | `https://lite.beebywork.com/api/v1/skills-market` | 市场 API 地址 |
+| `apiUrl` | string | `https://your-beelive-server.com/api/v1/skills-market` | 市场 API 地址 |
 
 ## 完整示例
 

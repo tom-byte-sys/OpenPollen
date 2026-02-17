@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import { loadConfig } from './config/loader.js';
+import { loadConfig, resolveConfigPath } from './config/loader.js';
 import { initLogger, getLogger } from './utils/logger.js';
 import { SessionManager } from './gateway/session.js';
 import { MessageRouter } from './gateway/router.js';
@@ -82,7 +82,19 @@ export async function createHiveAgent(configPath?: string): Promise<HiveAgentIns
   if (config.channels.webchat?.enabled) {
     const webchat = new WebchatAdapter();
     await webchat.initialize(config.channels.webchat as unknown as Record<string, unknown>);
-    webchat.inject({ router, sessionManager: router.sessionManager, memory: router.memory });
+    webchat.inject({
+      router,
+      sessionManager: router.sessionManager,
+      memory: router.memory,
+      appConfig: config,
+      configFilePath: resolveConfigPath(configPath),
+      reloadConfig: async () => {
+        const newConfig = loadConfig(configPath);
+        Object.assign(config, newConfig);
+        mainLog.info('配置已热重载');
+      },
+      skillManager,
+    });
     channels.push(webchat);
     mainLog.info('WebChat Channel 已配置');
   }

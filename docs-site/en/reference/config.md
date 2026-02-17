@@ -89,15 +89,15 @@ WeCom (implemented as plugin).
 
 Model provider configuration. Multiple can be configured; the first `enabled: true` provider is used.
 
-### providers.agentterm
+### providers.beelive
 
-AgentTerm cloud proxy (recommended for China users).
+Beelive cloud proxy (recommended for China users).
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `enabled` | boolean | `false` | Enable |
-| `apiKey` | string | — | AgentTerm API Key |
-| `baseUrl` | string | `https://lite.beebywork.com/api/v1/anthropic-proxy` | Proxy URL |
+| `apiKey` | string | — | Beelive API Key |
+| `baseUrl` | string | `https://your-beelive-server.com/api/v1/anthropic-proxy` | Proxy URL |
 
 ### providers.anthropic
 
@@ -161,7 +161,7 @@ Skills marketplace configuration.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `apiUrl` | string | `https://lite.beebywork.com/api/v1/skills-market` | Marketplace API URL |
+| `apiUrl` | string | `https://your-beelive-server.com/api/v1/skills-market` | Marketplace API URL |
 
 ## Full Example
 

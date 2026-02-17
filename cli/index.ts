@@ -7,9 +7,10 @@ import { resolve, dirname } from 'node:path';
 import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { createHiveAgent } from '../src/index.js';
-import { loadConfig } from '../src/config/loader.js';
+import { loadConfig, resolveConfigPath } from '../src/config/loader.js';
 import { SkillManager } from '../src/agent/skill-manager.js';
 import { MarketplaceClient } from '../src/agent/marketplace-client.js';
+import { BeeliveClient } from '../src/agent/beelive-client.js';
 import { maskSecret } from '../src/utils/crypto.js';
 
 const PID_FILE = resolve(homedir(), '.hiveagent', 'hiveagent.pid');
@@ -27,7 +28,7 @@ function loadAuthToken(): string | null {
 
 function createMarketplaceClient(configPath?: string): MarketplaceClient {
   const config = loadConfig(configPath);
-  const apiUrl = config.marketplace?.apiUrl || 'https://lite.beebywork.com/api/v1/skills-market';
+  const apiUrl = config.marketplace?.apiUrl || process.env.BEELIVE_MARKETPLACE_URL || 'https://lite.beebywork.com/api/v1/skills-market';
   const token = loadAuthToken();
   return new MarketplaceClient(apiUrl, token ?? undefined);
 }
@@ -51,6 +52,90 @@ function getBuiltinSkillsDir(): string {
   const cliDir = dirname(fileURLToPath(import.meta.url));
   // dist/cli/ → 项目根/skills/
   return resolve(cliDir, '..', '..', 'skills');
+}
+
+/**
+ * 保存 auth token 到 ~/.hiveagent/auth.json
+ */
+function saveAuthToken(token: string, email: string): void {
+  const authDir = resolve(homedir(), '.hiveagent');
+  if (!existsSync(authDir)) mkdirSync(authDir, { recursive: true });
+  const authPath = resolve(authDir, 'auth.json');
+  writeFileSync(authPath, JSON.stringify({
+    token,
+    email,
+    loginAt: new Date().toISOString(),
+  }, null, 2));
+}
+
+/**
+ * 显示 Beelive 平台账户状态（套餐/试用）
+ */
+async function showAccountStatus(client: BeeliveClient): Promise<void> {
+  try {
+    const sub = await client.getSubscription();
+    console.log(`\n  套餐: ${sub.plan} (${sub.status})`);
+    if (sub.expires_at) {
+      console.log(`  到期: ${sub.expires_at}`);
+    }
+    if (sub.rate_limit) {
+      console.log(`  速率: ${sub.rate_limit.requests_per_minute} 次/分, ${sub.rate_limit.requests_per_day} 次/天`);
+    }
+  } catch {
+    // 无订阅，尝试试用状态
+    try {
+      const trial = await client.getTrialStatus();
+      if (trial.trial_active) {
+        console.log(`\n  试用中: 剩余 ${trial.remaining_days ?? '?'} 天`);
+        if (trial.remaining_requests !== undefined) {
+          console.log(`  剩余请求: ${trial.remaining_requests}/${trial.total_requests ?? '?'}`);
+        }
+      } else {
+        console.log('\n  试用已过期，请升级套餐。');
+      }
+    } catch {
+      // 无试用信息
+    }
+  }
+}
+
+/**
+ * 更新配置文件中的 providers.beelive
+ */
+function updateConfigProviders(apiKey: string, configPath?: string): void {
+  const resolvedPath = resolveConfigPath(configPath) ?? resolve(homedir(), '.hiveagent', 'hiveagent.json');
+
+  let config: Record<string, unknown> = {};
+  if (existsSync(resolvedPath)) {
+    try {
+      config = JSON.parse(readFileSync(resolvedPath, 'utf-8')) as Record<string, unknown>;
+    } catch {
+      // 如果解析失败，用空对象
+    }
+  }
+
+  // 确保 providers 对象存在
+  if (!config.providers || typeof config.providers !== 'object') {
+    config.providers = {};
+  }
+  const providers = config.providers as Record<string, unknown>;
+  providers.beelive = {
+    enabled: true,
+    apiKey,
+  };
+
+  // 确保目录存在
+  const dir = dirname(resolvedPath);
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+
+  writeFileSync(resolvedPath, JSON.stringify(config, null, 2), 'utf-8');
+}
+
+/**
+ * 创建 BeeliveClient 实例
+ */
+function createBeeliveClient(token?: string): BeeliveClient {
+  return new BeeliveClient(undefined, token ?? undefined);
 }
 
 const program = new Command();
@@ -132,7 +217,7 @@ program
 
     // 1. 选择模型来源
     const providerIndex = await choose('选择 AI 模型来源:', [
-      'AgentTerm 云端托管 (推荐，无需翻墙，按量计费)',
+      'Beelive 云端托管 (推荐，无需翻墙，按量计费)',
       '自有 API Key (Anthropic)',
       '本地模型 (Ollama)',
     ]);
@@ -140,8 +225,122 @@ program
     const providers: Record<string, unknown> = {};
 
     if (providerIndex === 0) {
-      const apiKey = await ask('输入你的 AgentTerm API Key: ');
-      providers['agentterm'] = { enabled: true, apiKey };
+      const subIndex = await choose('Beelive 平台配置方式:', [
+        '我已有 API Key（直接输入）',
+        '注册新账号',
+        '登录已有账号',
+      ]);
+
+      if (subIndex === 0) {
+        // 直接输入 API Key
+        const apiKey = await ask('输入你的 Beelive API Key: ');
+        providers['beelive'] = { enabled: true, apiKey };
+      } else if (subIndex === 1) {
+        // 注册新账号
+        const email = await ask('邮箱: ');
+        const password = await ask('密码: ');
+        if (!email || !password) {
+          console.log('邮箱和密码不能为空，跳过 Beelive 配置。');
+        } else {
+          try {
+            const atClient = createBeeliveClient();
+            const authResult = await atClient.register(email, password);
+            atClient.setToken(authResult.access_token);
+            saveAuthToken(authResult.access_token, email);
+            console.log('  注册成功!');
+
+            // 检查账号状态
+            try {
+              const me = await atClient.getMe();
+              if (me.status === 'pending') {
+                console.log('  账号待激活，请查收邮件完成激活后运行 `hiveagent login` 获取 API Key。');
+              } else {
+                // 获取 Desktop API Key
+                try {
+                  const keyResult = await atClient.getDesktopApiKey();
+                  if (keyResult.api_key) {
+                    providers['beelive'] = { enabled: true, apiKey: keyResult.api_key };
+                    console.log(`  API Key 已获取: ${maskSecret(keyResult.api_key)}`);
+                  } else if (keyResult.exists) {
+                    console.log(`  Desktop Key 已存在 (${keyResult.key_prefix})`);
+                    console.log('  完整密钥仅首次创建时显示，请手动输入。');
+                    const manualKey = await ask('输入 API Key (留空跳过): ');
+                    if (manualKey) {
+                      providers['beelive'] = { enabled: true, apiKey: manualKey };
+                    }
+                  }
+                } catch (keyErr) {
+                  console.log(`  自动获取 API Key 失败: ${keyErr instanceof Error ? keyErr.message : keyErr}`);
+                  const manualKey = await ask('手动输入 API Key (留空跳过): ');
+                  if (manualKey) {
+                    providers['beelive'] = { enabled: true, apiKey: manualKey };
+                  }
+                }
+              }
+            } catch {
+              // getMe 失败时尝试直接获取 key
+              try {
+                const keyResult = await atClient.getDesktopApiKey();
+                if (keyResult.api_key) {
+                  providers['beelive'] = { enabled: true, apiKey: keyResult.api_key };
+                  console.log(`  API Key 已获取: ${maskSecret(keyResult.api_key)}`);
+                } else if (keyResult.exists) {
+                  console.log(`  Desktop Key 已存在 (${keyResult.key_prefix})，请手动输入。`);
+                }
+              } catch {
+                console.log('  请运行 `hiveagent login` 获取 API Key。');
+              }
+            }
+
+            await showAccountStatus(atClient);
+          } catch (err) {
+            console.error('  注册失败:', err instanceof Error ? err.message : err);
+            console.log('  提示: 如已有账号，可运行 `hiveagent login` 登录。');
+          }
+        }
+      } else {
+        // 登录已有账号
+        const email = await ask('邮箱: ');
+        const password = await ask('密码: ');
+        if (!email || !password) {
+          console.log('邮箱和密码不能为空，跳过 Beelive 配置。');
+        } else {
+          try {
+            const atClient = createBeeliveClient();
+            const authResult = await atClient.login(email, password);
+            atClient.setToken(authResult.access_token);
+            saveAuthToken(authResult.access_token, email);
+            console.log('  登录成功!');
+
+            // 获取 Desktop API Key
+            try {
+              const keyResult = await atClient.getDesktopApiKey();
+              if (keyResult.api_key) {
+                providers['beelive'] = { enabled: true, apiKey: keyResult.api_key };
+                console.log(`  API Key 已获取: ${maskSecret(keyResult.api_key)}`);
+              } else if (keyResult.exists) {
+                console.log(`  Desktop Key 已存在 (${keyResult.key_prefix})`);
+                console.log('  完整密钥仅首次创建时显示，请手动输入。');
+                const manualKey = await ask('输入 API Key (留空跳过): ');
+                if (manualKey) {
+                  providers['beelive'] = { enabled: true, apiKey: manualKey };
+                }
+              }
+            } catch (keyErr) {
+              console.log(`  自动获取 API Key 失败: ${keyErr instanceof Error ? keyErr.message : keyErr}`);
+              const manualKey = await ask('手动输入 API Key (留空跳过): ');
+              if (manualKey) {
+                providers['beelive'] = { enabled: true, apiKey: manualKey };
+              }
+            }
+
+            await showAccountStatus(atClient);
+          } catch (err) {
+            console.error('  登录失败:', err instanceof Error ? err.message : err);
+            console.log('  提示: 可稍后运行 `hiveagent login` 重试。');
+          }
+        }
+      }
     } else if (providerIndex === 1) {
       const apiKey = await ask('输入你的 Anthropic API Key: ');
       providers['anthropic'] = { enabled: true, apiKey };
@@ -256,7 +455,7 @@ program
 // === login ===
 program
   .command('login')
-  .description('登录到 HiveAgent 市场')
+  .description('登录到 Beelive 平台')
   .action(async () => {
     const rl = createInterface({ input: process.stdin, output: process.stdout });
     const ask = (q: string): Promise<string> =>
@@ -272,35 +471,36 @@ program
         return;
       }
 
-      const config = loadConfig();
-      const backendUrl = config.gateway?.auth?.backendUrl || 'https://lite.beebywork.com/api/v1';
+      // 1. 登录
+      const atClient = createBeeliveClient();
+      const authResult = await atClient.login(email, password);
+      atClient.setToken(authResult.access_token);
 
-      const response = await fetch(`${backendUrl}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+      // 2. 保存 JWT
+      saveAuthToken(authResult.access_token, email);
+      console.log('\n  登录成功!');
 
-      if (!response.ok) {
-        const data = await response.json() as { detail?: string };
-        console.error('登录失败:', data.detail || '请检查邮箱和密码');
-        rl.close();
-        return;
+      // 3. 获取/创建 Desktop API Key 并更新配置
+      try {
+        const keyResult = await atClient.getDesktopApiKey();
+        if (keyResult.api_key) {
+          // 首次创建，拿到完整 key
+          updateConfigProviders(keyResult.api_key);
+          console.log(`  API Key: ${maskSecret(keyResult.api_key)}`);
+          console.log('  已自动更新配置文件 providers.beelive');
+        } else if (keyResult.exists) {
+          // key 已存在，只有前缀
+          console.log(`  Desktop Key 已存在 (${keyResult.key_prefix})`);
+          console.log('  完整密钥仅首次创建时显示，请前往控制台查看或删除后重新创建。');
+        }
+      } catch (keyErr) {
+        console.log(`  获取 API Key 失败: ${keyErr instanceof Error ? keyErr.message : keyErr}`);
       }
 
-      const data = await response.json() as { access_token: string; token_type: string };
+      // 4. 显示套餐/试用状态
+      await showAccountStatus(atClient);
 
-      // 保存 token
-      const authDir = resolve(homedir(), '.hiveagent');
-      if (!existsSync(authDir)) mkdirSync(authDir, { recursive: true });
-      const authPath = resolve(authDir, 'auth.json');
-      writeFileSync(authPath, JSON.stringify({
-        token: data.access_token,
-        email,
-        loginAt: new Date().toISOString(),
-      }, null, 2));
-
-      console.log(`\n  登录成功! Token 已保存到 ${authPath}`);
+      console.log('');
     } catch (error) {
       console.error('登录失败:', error instanceof Error ? error.message : error);
     } finally {
@@ -742,6 +942,77 @@ skillCmd
       console.log(`\n  累计净收入: ¥${totalAll.toFixed(2)}`);
     } catch (error) {
       console.error('查询失败:', error instanceof Error ? error.message : error);
+    }
+  });
+
+// === model ===
+const modelCmd = program.command('model').description('模型/Provider 管理');
+
+modelCmd
+  .command('list')
+  .description('列出已配置的 Provider 及状态')
+  .option('-c, --config <path>', '配置文件路径')
+  .action(async (options: { config?: string }) => {
+    try {
+      const config = loadConfig(options.config);
+      const { providers } = config;
+
+      console.log('\n已配置的 AI Provider:\n');
+
+      // Beelive 平台
+      const beeliveProvider = providers.beelive ?? providers.agentterm;
+      if (beeliveProvider) {
+        const status = beeliveProvider.enabled ? (beeliveProvider.apiKey ? 'OK' : '缺少 API Key') : '未启用';
+        console.log(`  Beelive 聚合平台`);
+        console.log(`    状态: ${status}`);
+        if (beeliveProvider.apiKey) console.log(`    API Key: ${maskSecret(beeliveProvider.apiKey)}`);
+        if (beeliveProvider.baseUrl) console.log(`    Base URL: ${beeliveProvider.baseUrl}`);
+      }
+
+      // Anthropic
+      if (providers.anthropic) {
+        const an = providers.anthropic;
+        const status = an.enabled ? (an.apiKey ? 'OK' : '缺少 API Key') : '未启用';
+        console.log(`  Anthropic`);
+        console.log(`    状态: ${status}`);
+        if (an.apiKey) console.log(`    API Key: ${maskSecret(an.apiKey)}`);
+        if (an.baseUrl) console.log(`    Base URL: ${an.baseUrl}`);
+      }
+
+      // Ollama
+      if (providers.ollama) {
+        const ol = providers.ollama;
+        const status = ol.enabled ? 'OK' : '未启用';
+        console.log(`  Ollama`);
+        console.log(`    状态: ${status}`);
+        if (ol.baseUrl) console.log(`    Base URL: ${ol.baseUrl}`);
+        if (ol.model) console.log(`    模型: ${ol.model}`);
+      }
+
+      // OpenAI
+      if (providers.openai) {
+        const oi = providers.openai;
+        const status = oi.enabled ? (oi.apiKey ? 'OK' : '缺少 API Key') : '未启用';
+        console.log(`  OpenAI`);
+        console.log(`    状态: ${status}`);
+        if (oi.apiKey) console.log(`    API Key: ${maskSecret(oi.apiKey)}`);
+      }
+
+      if (!providers.beelive && !providers.agentterm && !providers.anthropic && !providers.ollama && !providers.openai) {
+        console.log('  (无) 请运行 `hiveagent init` 配置 Provider。');
+      }
+
+      // 若已登录 Beelive，显示远程套餐信息
+      const token = loadAuthToken();
+      if (token && (providers.beelive?.enabled || providers.agentterm?.enabled)) {
+        const atClient = createBeeliveClient(token);
+        console.log('\n  Beelive 平台账户信息:');
+        await showAccountStatus(atClient);
+      }
+
+      console.log('');
+    } catch (error) {
+      console.error('加载配置失败:', error instanceof Error ? error.message : error);
     }
   });
 

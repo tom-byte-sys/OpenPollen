@@ -255,6 +255,34 @@ const sidebarIcons = {
       <path d="m19.07 10.93-4.24 4.24"></path>
     </svg>
   `,
+  agent: html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"></path>
+      <circle cx="8" cy="14" r="1"></circle>
+      <circle cx="16" cy="14" r="1"></circle>
+    </svg>
+  `,
+  providers: html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+      <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+      <line x1="6" y1="6" x2="6.01" y2="6"></line>
+      <line x1="6" y1="18" x2="6.01" y2="18"></line>
+    </svg>
+  `,
+  memory: html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+      <line x1="12" y1="22.08" x2="12" y2="12"></line>
+    </svg>
+  `,
+  marketplace: html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+      <polyline points="9 22 9 12 15 12 15 22"></polyline>
+    </svg>
+  `,
   default: html`
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -263,21 +291,28 @@ const sidebarIcons = {
   `,
 };
 
-// Section definitions
-const SECTIONS: Array<{ key: string; label: string }> = [
-  { key: "env", label: t('config.nav.environment') },
-  { key: "update", label: t('config.nav.updates') },
-  { key: "agents", label: t('config.nav.agents') },
-  { key: "auth", label: t('config.nav.authentication') },
-  { key: "channels", label: t('config.nav.channels') },
-  { key: "messages", label: t('config.nav.messages') },
-  { key: "commands", label: t('config.nav.commands') },
-  { key: "hooks", label: t('config.nav.hooks') },
-  { key: "skills", label: t('config.nav.skills') },
-  { key: "tools", label: t('config.nav.tools') },
-  { key: "gateway", label: t('config.nav.gateway') },
-  { key: "wizard", label: t('config.nav.setupWizard') },
-];
+// Section definitions — must be a function so t() runs at render time, not import time
+function getSections(): Array<{ key: string; label: string }> {
+  return [
+    { key: "env", label: t('config.nav.environment') },
+    { key: "update", label: t('config.nav.updates') },
+    { key: "agent", label: t('config.nav.agent') },
+    { key: "agents", label: t('config.nav.agents') },
+    { key: "auth", label: t('config.nav.authentication') },
+    { key: "channels", label: t('config.nav.channels') },
+    { key: "messages", label: t('config.nav.messages') },
+    { key: "commands", label: t('config.nav.commands') },
+    { key: "hooks", label: t('config.nav.hooks') },
+    { key: "skills", label: t('config.nav.skills') },
+    { key: "tools", label: t('config.nav.tools') },
+    { key: "gateway", label: t('config.nav.gateway') },
+    { key: "providers", label: t('config.nav.providers') },
+    { key: "memory", label: t('config.nav.memory') },
+    { key: "logging", label: t('config.nav.logging') },
+    { key: "marketplace", label: t('config.nav.marketplace') },
+    { key: "wizard", label: t('config.nav.setupWizard') },
+  ];
+}
 
 type SubsectionEntry = {
   key: string;
@@ -391,10 +426,11 @@ export function renderConfig(props: ConfigProps) {
 
   // Get available sections from schema
   const schemaProps = analysis.schema?.properties ?? {};
-  const availableSections = SECTIONS.filter((s) => s.key in schemaProps);
+  const sections = getSections();
+  const availableSections = sections.filter((s) => s.key in schemaProps);
 
   // Add any sections in schema but not in our list
-  const knownKeys = new Set(SECTIONS.map((s) => s.key));
+  const knownKeys = new Set(sections.map((s) => s.key));
   const extraSections = Object.keys(schemaProps)
     .filter((k) => !knownKeys.has(k))
     .map((k) => ({ key: k, label: k.charAt(0).toUpperCase() + k.slice(1) }));

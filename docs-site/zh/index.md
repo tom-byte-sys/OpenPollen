@@ -16,7 +16,7 @@ hero:
 features:
   - icon: 🤖
     title: 多模型支持
-    details: 原生支持 Claude、OpenAI、本地 Ollama 等多种模型，通过 AgentTerm 代理无需翻墙
+    details: 原生支持 Claude、OpenAI、本地 Ollama 等多种模型，通过 Beelive 平台代理无需翻墙
   - icon: 💬
     title: 多渠道接入
     details: 内置 WebChat 网页聊天、钉钉 Bot、企业微信，支持自定义渠道插件

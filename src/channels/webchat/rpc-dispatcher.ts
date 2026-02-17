@@ -1,7 +1,10 @@
 import type { WebSocket } from 'ws';
 import type { RequestFrame, ResponseFrame } from './protocol.js';
 import { errorResponse } from './protocol.js';
-import { handleHealth, handleStatus, handleConfigGet, handleSkillsStatus } from './handlers/system.js';
+import { handleHealth, handleStatus, handleSkillsStatus, handleModelsList, handleLastHeartbeat } from './handlers/system.js';
+import { handleAgentsList, handleAgentsFilesList, handleAgentIdentityGet, handleChannelsStatus, handleCronList } from './handlers/agents.js';
+import { handleConfigGetFull, handleConfigSchema, handleConfigSet, handleConfigApply } from './handlers/config.js';
+import { handleLogsTail } from './handlers/logs.js';
 import { handleSessionsList, handleSessionsPatch } from './handlers/sessions.js';
 import { handleChatSend, handleChatHistory, handleChatAbort, type ChatSendParams } from './handlers/chat.js';
 import { AbortManager } from './abort-manager.js';
@@ -9,6 +12,8 @@ import { ChatHistoryStore } from './history-store.js';
 import type { MessageRouter } from '../../gateway/router.js';
 import type { SessionManager } from '../../gateway/session.js';
 import type { MemoryStore } from '../../memory/interface.js';
+import type { AppConfig } from '../../config/schema.js';
+import type { SkillManager } from '../../agent/skill-manager.js';
 import { getLogger } from '../../utils/logger.js';
 
 const log = getLogger('webchat:rpc');
@@ -19,6 +24,11 @@ export interface DispatcherDeps {
   memory: MemoryStore;
   abortManager: AbortManager;
   historyStore: ChatHistoryStore;
+  appConfig: AppConfig;
+  configFilePath: string | null;
+  reloadConfig: () => Promise<void>;
+  getLastHeartbeatTs: () => number | null;
+  skillManager: SkillManager;
 }
 
 /**
@@ -46,11 +56,61 @@ export class RpcDispatcher {
           memory: 'sqlite',
         });
 
-      case 'config.get':
-        return handleConfigGet(id);
-
       case 'skills.status':
-        return handleSkillsStatus(id);
+        return handleSkillsStatus(id, this.deps.skillManager);
+
+      // --- Agents ---
+      case 'agents.list':
+        return handleAgentsList(id, this.deps.appConfig);
+
+      case 'agent.identity.get':
+        return handleAgentIdentityGet(id, params as { agentId?: string }, this.deps.appConfig);
+
+      case 'agents.files.list':
+        return handleAgentsFilesList(id);
+
+      case 'channels.status':
+        return handleChannelsStatus(id);
+
+      case 'cron.list':
+        return handleCronList(id);
+
+      // --- Config ---
+      case 'config.get':
+        return handleConfigGetFull(id, this.deps.configFilePath);
+
+      case 'config.schema':
+        return handleConfigSchema(id);
+
+      case 'config.set':
+        return handleConfigSet(
+          id,
+          params as { raw?: string; expectedHash?: string },
+          this.deps.configFilePath,
+        );
+
+      case 'config.apply':
+        return handleConfigApply(
+          id,
+          params as { raw?: string; expectedHash?: string },
+          this.deps.configFilePath,
+          this.deps.reloadConfig,
+        );
+
+      // --- Debug ---
+      case 'models.list':
+        return handleModelsList(id, this.deps.appConfig);
+
+      case 'last-heartbeat':
+        return handleLastHeartbeat(id, this.deps.getLastHeartbeatTs);
+
+      // --- Logs ---
+      case 'logs.tail':
+        return handleLogsTail(
+          id,
+          params as { cursor?: number; limit?: number; maxBytes?: number },
+          this.deps.appConfig,
+        );
 
       // --- Chat ---
       case 'chat.send':

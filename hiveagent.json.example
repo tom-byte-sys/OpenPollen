@@ -17,7 +17,7 @@
     "port": 18800,
     "auth": {
       "mode": "none",      // "api-key" | "jwt" | "none"
-      "backendUrl": "https://lite.beebywork.com/api/v1"
+      "backendUrl": "https://your-beelive-server.com/api/v1"
     },
     "session": {
       "timeoutMinutes": 30,
@@ -50,10 +50,10 @@
   },
 
   "providers": {
-    "agentterm": {
+    "beelive": {
       "enabled": false,
-      "apiKey": "${AGENTTERM_API_KEY}",
-      "baseUrl": "https://lite.beebywork.com/api/v1/anthropic-proxy"
+      "apiKey": "${BEELIVE_API_KEY}",
+      "baseUrl": "https://your-beelive-server.com/api/v1/anthropic-proxy"
     },
     "anthropic": {
       "enabled": true,
@@ -87,6 +87,6 @@
   },
 
   "marketplace": {
-    "apiUrl": "https://lite.beebywork.com/api/v1/skills-market"
+    "apiUrl": "https://your-beelive-server.com/api/v1/skills-market"
   }
 }

@@ -72,6 +72,7 @@ export const ProviderSchema = Type.Object({
 });
 
 export const ProvidersConfigSchema = Type.Object({
+  beelive: Type.Optional(ProviderSchema),
   agentterm: Type.Optional(ProviderSchema),
   anthropic: Type.Optional(ProviderSchema),
   openai: Type.Optional(ProviderSchema),
@@ -105,7 +106,7 @@ export const LoggingConfigSchema = Type.Object({
 });
 
 export const MarketplaceConfigSchema = Type.Object({
-  apiUrl: Type.String({ default: 'https://lite.beebywork.com/api/v1/skills-market' }),
+  apiUrl: Type.String({ default: process.env.BEELIVE_MARKETPLACE_URL || 'https://lite.beebywork.com/api/v1/skills-market' }),
 });
 
 export const AppConfigSchema = Type.Object({

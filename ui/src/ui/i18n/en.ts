@@ -396,6 +396,7 @@ export const en: Translations = {
   'skills.name': 'Name',
   'skills.namePlaceholder': 'Skill name',
   'skills.marketplace': 'Marketplace',
+  'skills.browseMarketplace': 'Browse Skill Marketplace',
   'skills.available': 'Available',
   'skills.manage': 'Manage',
 
@@ -867,6 +868,19 @@ export const en: Translations = {
   'config.nav.tools': 'Tools',
   'config.nav.gateway': 'Gateway',
   'config.nav.setupWizard': 'Setup Wizard',
+  'config.nav.agent': 'Agent',
+  'config.nav.providers': 'Providers',
+  'config.nav.memory': 'Memory',
+  'config.nav.logging': 'Logging',
+  'config.nav.marketplace': 'Marketplace',
+  'config.section.agent': 'Agent',
+  'config.section.agentDesc': 'Agent model, tools, and behavior configuration.',
+  'config.section.providers': 'Providers',
+  'config.section.providersDesc': 'AI provider connections and API keys.',
+  'config.section.memory': 'Memory',
+  'config.section.memoryDesc': 'Memory storage and retrieval settings.',
+  'config.section.marketplace': 'Marketplace',
+  'config.section.marketplaceDesc': 'Plugin and skill marketplace.',
 
   // ── usage (extra) ────────────────────────────────
   'usage.tokenUsage': 'Token Usage',

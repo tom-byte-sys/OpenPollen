@@ -82,6 +82,9 @@ export function loadConfig(explicitPath?: string): AppConfig {
     rawConfig = {};
   }
 
+  // 向后兼容：将旧的 providers.agentterm 映射到 providers.beelive
+  migrateAgentTermProvider(rawConfig);
+
   // 环境变量替换
   const substituted = substituteEnvVars(rawConfig) as Record<string, unknown>;
 
@@ -106,6 +109,18 @@ export function loadConfig(explicitPath?: string): AppConfig {
   }
 
   return config;
+}
+
+/**
+ * 向后兼容：如果配置中有 providers.agentterm 但没有 providers.beelive，
+ * 自动将 agentterm 配置复制到 beelive
+ */
+function migrateAgentTermProvider(config: Record<string, unknown>): void {
+  const providers = config.providers as Record<string, unknown> | undefined;
+  if (!providers) return;
+  if (providers.agentterm && !providers.beelive) {
+    providers.beelive = providers.agentterm;
+  }
 }
 
 /**
@@ -136,6 +151,13 @@ function deepMerge(
     }
   }
   return result;
+}
+
+/**
+ * 解析配置文件路径（公开版本，供外部模块使用）
+ */
+export function resolveConfigPath(explicitPath?: string): string | null {
+  return findConfigFile(explicitPath);
 }
 
 /**

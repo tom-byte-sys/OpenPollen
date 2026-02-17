@@ -43,7 +43,7 @@ export class MessageRouter {
     const trimmed = (message.content.text ?? '').trim();
     if (trimmed === '/new') return this.handleNewSession(message);
     if (trimmed.startsWith('/resume')) return this.handleResumeSession(message, trimmed);
-    if (trimmed === '/market') return '技能市场: https://agent.beebywork.com/marketplace.html\n\n也可以使用 CLI 搜索和安装:\n  hiveagent skill search <keyword>\n  hiveagent skill install <name>';
+    if (trimmed === '/market') return '技能市场: 请访问 HiveAgent 控制台查看\n\n也可以使用 CLI 搜索和安装:\n  hiveagent skill search <keyword>\n  hiveagent skill install <name>';
 
     const session = this.sessionManager.getOrCreate(
       message.channelType,

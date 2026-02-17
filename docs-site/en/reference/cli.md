@@ -38,7 +38,7 @@ hiveagent init
 ```
 
 Guides you through:
-1. Choose model provider (AgentTerm / Anthropic / Ollama)
+1. Choose model provider (Beelive / Anthropic / Ollama)
 2. Configure chat platforms (DingTalk / WebChat)
 3. Install built-in skills
 4. Generate config file at `~/.hiveagent/hiveagent.json`

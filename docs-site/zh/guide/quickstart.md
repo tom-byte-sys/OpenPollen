@@ -6,7 +6,7 @@
 
 - Node.js 20 或更高版本
 - npm 或 pnpm
-- Claude API Key（或 AgentTerm API Key）
+- Claude API Key（或 Beelive API Key）
 
 ## 安装
 
@@ -33,7 +33,7 @@ npx hiveagent init
 初始化向导会引导你完成以下配置：
 
 1. **选择模型来源**
-   - AgentTerm 云端托管（推荐，无需翻墙）
+   - Beelive 云端托管（推荐，无需翻墙）
    - Anthropic 自有 API Key
    - 本地模型 (Ollama)
 

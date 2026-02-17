@@ -38,12 +38,24 @@ function parseMaybeJsonString(value: unknown) {
 }
 
 function normalizeLevel(value: unknown): LogLevel | null {
-  if (typeof value !== "string") {
-    return null;
+  if (typeof value === "string") {
+    const lowered = value.toLowerCase() as LogLevel;
+    return LEVELS.has(lowered) ? lowered : null;
   }
-  const lowered = value.toLowerCase() as LogLevel;
-  return LEVELS.has(lowered) ? lowered : null;
+  if (typeof value === "number") {
+    return PINO_LEVEL_MAP[value] ?? null;
+  }
+  return null;
 }
+
+const PINO_LEVEL_MAP: Record<number, LogLevel> = {
+  10: "trace",
+  20: "debug",
+  30: "info",
+  40: "warn",
+  50: "error",
+  60: "fatal",
+};
 
 export function parseLogLine(line: string): LogEntry {
   if (!line.trim()) {
@@ -55,29 +67,47 @@ export function parseLogLine(line: string): LogEntry {
       obj && typeof obj._meta === "object" && obj._meta !== null
         ? (obj._meta as Record<string, unknown>)
         : null;
-    const time =
-      typeof obj.time === "string" ? obj.time : typeof meta?.date === "string" ? meta?.date : null;
-    const level = normalizeLevel(meta?.logLevelName ?? meta?.level);
 
-    const contextCandidate =
-      typeof obj["0"] === "string" ? obj["0"] : typeof meta?.name === "string" ? meta?.name : null;
-    const contextObj = parseMaybeJsonString(contextCandidate);
+    // Time: pino uses numeric ms timestamp; legacy uses string or _meta.date
+    let time: string | null = null;
+    if (typeof obj.time === "number") {
+      time = new Date(obj.time).toISOString();
+    } else if (typeof obj.time === "string") {
+      time = obj.time;
+    } else if (typeof meta?.date === "string") {
+      time = meta.date;
+    }
+
+    // Level: pino uses numeric (30=info); legacy uses _meta.logLevelName
+    const level = normalizeLevel(obj.level) ?? normalizeLevel(meta?.logLevelName ?? meta?.level);
+
+    // Subsystem: pino child logger sets obj.module; legacy uses obj["0"] or _meta.name
     let subsystem: string | null = null;
-    if (contextObj) {
-      if (typeof contextObj.subsystem === "string") {
-        subsystem = contextObj.subsystem;
-      } else if (typeof contextObj.module === "string") {
-        subsystem = contextObj.module;
+    if (typeof obj.module === "string") {
+      subsystem = obj.module;
+    } else {
+      const contextCandidate =
+        typeof obj["0"] === "string" ? obj["0"] : typeof meta?.name === "string" ? meta?.name : null;
+      const contextObj = parseMaybeJsonString(contextCandidate);
+      if (contextObj) {
+        if (typeof contextObj.subsystem === "string") {
+          subsystem = contextObj.subsystem;
+        } else if (typeof contextObj.module === "string") {
+          subsystem = contextObj.module;
+        }
+      }
+      if (!subsystem && contextCandidate && contextCandidate.length < 120) {
+        subsystem = contextCandidate;
       }
     }
-    if (!subsystem && contextCandidate && contextCandidate.length < 120) {
-      subsystem = contextCandidate;
-    }
 
+    // Message: pino uses obj.msg; legacy uses obj["1"] or obj["0"] or obj.message
     let message: string | null = null;
-    if (typeof obj["1"] === "string") {
+    if (typeof obj.msg === "string") {
+      message = obj.msg;
+    } else if (typeof obj["1"] === "string") {
       message = obj["1"];
-    } else if (!contextObj && typeof obj["0"] === "string") {
+    } else if (!subsystem && typeof obj["0"] === "string") {
       message = obj["0"];
     } else if (typeof obj.message === "string") {
       message = obj.message;

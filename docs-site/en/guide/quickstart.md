@@ -6,7 +6,7 @@ This guide helps you quickly launch HiveAgent locally and chat via WebChat.
 
 - Node.js 20 or higher
 - npm or pnpm
-- Claude API Key (or AgentTerm API Key)
+- Claude API Key (or Beelive API Key)
 
 ## Installation
 
@@ -33,7 +33,7 @@ npx hiveagent init
 The wizard guides you through:
 
 1. **Choose model provider**
-   - AgentTerm cloud proxy (recommended for China)
+   - Beelive cloud proxy (recommended for China)
    - Anthropic API Key
    - Local model (Ollama)
 

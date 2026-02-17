@@ -18,6 +18,7 @@ export type SkillsProps = {
   edits: Record<string, string>;
   busyKey: string | null;
   messages: SkillMessageMap;
+  marketplaceUrl?: string;
   onFilterChange: (next: string) => void;
   onRefresh: () => void;
   onToggle: (skillKey: string, enabled: boolean) => void;
@@ -43,9 +44,14 @@ export function renderSkills(props: SkillsProps) {
           <div class="card-title">${t('skills.title')}</div>
           <div class="card-sub">${t('skills.subtitle')}</div>
         </div>
-        <button class="btn" ?disabled=${props.loading} @click=${props.onRefresh}>
-          ${props.loading ? t('common.loading') : t('common.refresh')}
-        </button>
+        <div class="row" style="gap: 8px;">
+          ${props.marketplaceUrl
+            ? html`<a class="btn" href=${props.marketplaceUrl} target="_blank" rel="noopener">${t('skills.browseMarketplace')}</a>`
+            : nothing}
+          <button class="btn" ?disabled=${props.loading} @click=${props.onRefresh}>
+            ${props.loading ? t('common.loading') : t('common.refresh')}
+          </button>
+        </div>
       </div>
 
       <div class="filters" style="margin-top: 14px;">

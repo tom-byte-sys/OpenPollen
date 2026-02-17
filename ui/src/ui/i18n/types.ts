@@ -394,6 +394,7 @@ export type Translations = {
   'skills.name': string;
   'skills.namePlaceholder': string;
   'skills.marketplace': string;
+  'skills.browseMarketplace': string;
   'skills.available': string;
   'skills.manage': string;
 
@@ -865,6 +866,19 @@ export type Translations = {
   'config.nav.tools': string;
   'config.nav.gateway': string;
   'config.nav.setupWizard': string;
+  'config.nav.agent': string;
+  'config.nav.providers': string;
+  'config.nav.memory': string;
+  'config.nav.logging': string;
+  'config.nav.marketplace': string;
+  'config.section.agent': string;
+  'config.section.agentDesc': string;
+  'config.section.providers': string;
+  'config.section.providersDesc': string;
+  'config.section.memory': string;
+  'config.section.memoryDesc': string;
+  'config.section.marketplace': string;
+  'config.section.marketplaceDesc': string;
 
   // ── usage (extra) ────────────────────────────────
   'usage.tokenUsage': string;

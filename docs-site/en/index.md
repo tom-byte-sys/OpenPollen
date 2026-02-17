@@ -16,7 +16,7 @@ hero:
 features:
   - icon: 🤖
     title: Multi-Model Support
-    details: Native support for Claude, OpenAI, local Ollama and more. Access Claude without VPN via AgentTerm proxy.
+    details: Native support for Claude, OpenAI, local Ollama and more. Access Claude without VPN via Beelive proxy.
   - icon: 💬
     title: Multi-Channel
     details: Built-in WebChat, DingTalk Bot, WeCom support. Extend with custom channel plugins.

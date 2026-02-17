@@ -25,7 +25,18 @@ const SUPPORTED_METHODS = [
   'health',
   'status',
   'config.get',
+  'config.schema',
+  'config.set',
+  'config.apply',
   'skills.status',
+  'models.list',
+  'last-heartbeat',
+  'logs.tail',
+  'agents.list',
+  'agents.files.list',
+  'agent.identity.get',
+  'channels.status',
+  'cron.list',
 ];
 
 const SUPPORTED_EVENTS = ['chat', 'tick'];

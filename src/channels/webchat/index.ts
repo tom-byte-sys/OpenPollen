@@ -12,6 +12,8 @@ import type { ChannelAdapter, InboundMessage, OutboundMessage } from '../interfa
 import type { MessageRouter } from '../../gateway/router.js';
 import type { SessionManager } from '../../gateway/session.js';
 import type { MemoryStore } from '../../memory/interface.js';
+import type { AppConfig } from '../../config/schema.js';
+import type { SkillManager } from '../../agent/skill-manager.js';
 import type { Server } from 'node:http';
 
 const log = getLogger('webchat');
@@ -44,10 +46,16 @@ export class WebchatAdapter implements ChannelAdapter {
   private healthy = false;
   private tickTimer: ReturnType<typeof setInterval> | null = null;
 
+  private lastTickTs: number | null = null;
+
   // Injected dependencies
   private router!: MessageRouter;
   private sessionManager!: SessionManager;
   private memory!: MemoryStore;
+  private appConfig!: AppConfig;
+  private configFilePath: string | null = null;
+  private reloadConfig: (() => Promise<void>) = async () => {};
+  private skillManager!: SkillManager;
 
   // The onMessage handler from the ChannelAdapter interface (unused here
   // since we call router.handleMessage directly, but kept for interface compliance)
@@ -57,10 +65,22 @@ export class WebchatAdapter implements ChannelAdapter {
    * Inject dependencies that are not available via the standard ChannelAdapter.initialize().
    * Must be called before start().
    */
-  inject(deps: { router: MessageRouter; sessionManager: SessionManager; memory: MemoryStore }): void {
+  inject(deps: {
+    router: MessageRouter;
+    sessionManager: SessionManager;
+    memory: MemoryStore;
+    appConfig: AppConfig;
+    configFilePath: string | null;
+    reloadConfig: () => Promise<void>;
+    skillManager: SkillManager;
+  }): void {
     this.router = deps.router;
     this.sessionManager = deps.sessionManager;
     this.memory = deps.memory;
+    this.appConfig = deps.appConfig;
+    this.configFilePath = deps.configFilePath;
+    this.reloadConfig = deps.reloadConfig;
+    this.skillManager = deps.skillManager;
   }
 
   async initialize(config: Record<string, unknown>): Promise<void> {
@@ -81,11 +101,16 @@ export class WebchatAdapter implements ChannelAdapter {
       memory: this.memory,
       abortManager: this.abortManager,
       historyStore: this.historyStore,
+      appConfig: this.appConfig,
+      configFilePath: this.configFilePath,
+      reloadConfig: this.reloadConfig,
+      getLastHeartbeatTs: () => this.lastTickTs,
+      skillManager: this.skillManager,
     };
     this.dispatcher = new RpcDispatcher(deps);
 
     // Resolve UI directory
-    const uiDir = resolve(import.meta.dirname ?? '.', '..', '..', '..', 'dist', 'control-ui');
+    const uiDir = resolve(import.meta.dirname ?? '.', '..', '..', '..', '..', 'dist', 'control-ui');
 
     const uiConfig: UiServerConfig = {
       port: this.config.port,
@@ -202,7 +227,8 @@ export class WebchatAdapter implements ChannelAdapter {
   }
 
   private broadcastTick(): void {
-    const tick = JSON.stringify(eventFrame('tick', { ts: Date.now() }));
+    this.lastTickTs = Date.now();
+    const tick = JSON.stringify(eventFrame('tick', { ts: this.lastTickTs }));
     for (const client of this.clients.values()) {
       if (client.ws.readyState === WebSocket.OPEN) {
         try {

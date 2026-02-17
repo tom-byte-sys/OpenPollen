@@ -140,15 +140,15 @@ Default ports: Gateway 18800, WebChat 3001. Change `gateway.port` and `channels.
 
 ### Model API connection timeout
 
-If you can't access Anthropic API directly from China, configure the AgentTerm proxy:
+If you can't access Anthropic API directly from China, configure the Beelive proxy:
 
 ```json5
 {
   "providers": {
-    "agentterm": {
+    "beelive": {
       "enabled": true,
-      "apiKey": "your-agentterm-key",
-      "baseUrl": "https://lite.beebywork.com/api/v1/anthropic-proxy"
+      "apiKey": "your-beelive-key",
+      "baseUrl": "https://your-beelive-server.com/api/v1/anthropic-proxy"
     }
   }
 }

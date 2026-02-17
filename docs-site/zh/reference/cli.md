@@ -40,7 +40,7 @@ hiveagent init
 ```
 
 引导完成以下步骤：
-1. 选择模型来源（AgentTerm / Anthropic / Ollama）
+1. 选择模型来源（Beelive / Anthropic / Ollama）
 2. 配置聊天平台（钉钉 / WebChat）
 3. 安装内置技能
 4. 生成配置文件到 `~/.hiveagent/hiveagent.json`

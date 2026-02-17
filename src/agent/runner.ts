@@ -8,6 +8,8 @@ import { SkillManager } from './skill-manager.js';
 
 const log = getLogger('agent-runner');
 
+const BEELIVE_PROXY_URL = process.env.BEELIVE_PROXY_URL || 'https://lite.beebywork.com/api/v1/anthropic-proxy';
+
 export interface AgentRunnerOptions {
   config: AppConfig;
   skillManager: SkillManager;
@@ -123,6 +125,7 @@ export class AgentRunner {
       includePartialMessages: true,
       env: {
         ...process.env,
+        ...this.resolveProviderEnv(),
         CLAUDECODE: '',  // 避免嵌套会话检测
       },
       stderr: (data: string) => {
@@ -293,6 +296,51 @@ export class AgentRunner {
       log.warn({ error: err, userId }, '加载用户上下文失败');
       return null;
     }
+  }
+
+  /**
+   * 按优先级解析 providers 配置，映射为 SDK 环境变量
+   * 优先级: beelive > agentterm(兼容) > anthropic > ollama
+   */
+  private resolveProviderEnv(): Record<string, string> {
+    const { providers } = this.config;
+    const env: Record<string, string> = {};
+
+    // beelive 平台（新配置名）
+    if (providers.beelive?.enabled && providers.beelive.apiKey) {
+      env['ANTHROPIC_API_KEY'] = providers.beelive.apiKey;
+      env['ANTHROPIC_BASE_URL'] = providers.beelive.baseUrl || BEELIVE_PROXY_URL;
+      log.info('使用 Beelive 聚合平台');
+      return env;
+    }
+
+    // 向后兼容旧的 agentterm 配置名
+    if (providers.agentterm?.enabled && providers.agentterm.apiKey) {
+      env['ANTHROPIC_API_KEY'] = providers.agentterm.apiKey;
+      env['ANTHROPIC_BASE_URL'] = providers.agentterm.baseUrl || BEELIVE_PROXY_URL;
+      log.info('使用 Beelive 聚合平台 (兼容 agentterm 配置)');
+      return env;
+    }
+
+    if (providers.anthropic?.enabled && providers.anthropic.apiKey) {
+      env['ANTHROPIC_API_KEY'] = providers.anthropic.apiKey;
+      if (providers.anthropic.baseUrl) {
+        env['ANTHROPIC_BASE_URL'] = providers.anthropic.baseUrl;
+      }
+      log.info('使用 Anthropic API');
+      return env;
+    }
+
+    if (providers.ollama?.enabled && providers.ollama.baseUrl) {
+      env['ANTHROPIC_BASE_URL'] = providers.ollama.baseUrl;
+      if (providers.ollama.apiKey) {
+        env['ANTHROPIC_API_KEY'] = providers.ollama.apiKey;
+      }
+      log.info('使用 Ollama 本地模型');
+      return env;
+    }
+
+    return env;
   }
 
   /**
