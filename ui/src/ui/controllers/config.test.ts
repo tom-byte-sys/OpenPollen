@@ -145,7 +145,7 @@ describe("applyConfig", () => {
     state.client = { request } as unknown as ConfigState["client"];
     state.applySessionKey = "agent:main:whatsapp:dm:+15555550123";
     state.configFormMode = "raw";
-    state.configRaw = '{\n  agent: { workspace: "~/hiveagent" }\n}\n';
+    state.configRaw = '{\n  agent: { workspace: "~/openpollen" }\n}\n';
     state.configSnapshot = {
       hash: "hash-123",
     };
@@ -153,7 +153,7 @@ describe("applyConfig", () => {
     await applyConfig(state);
 
     expect(request).toHaveBeenCalledWith("config.apply", {
-      raw: '{\n  agent: { workspace: "~/hiveagent" }\n}\n',
+      raw: '{\n  agent: { workspace: "~/openpollen" }\n}\n',
       baseHash: "hash-123",
       sessionKey: "agent:main:whatsapp:dm:+15555550123",
     });

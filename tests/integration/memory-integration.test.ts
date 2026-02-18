@@ -34,7 +34,7 @@ function createConfig(): AppConfig {
     },
     channels: {},
     providers: {},
-    skills: { directory: '/tmp/hiveagent-mem-test-skills', enabled: [] },
+    skills: { directory: '/tmp/openpollen-mem-test-skills', enabled: [] },
     memory: { backend: 'sqlite' as const, sqlitePath: '/tmp/mem-test.db', fileDirectory: '/tmp/mem-test' },
     logging: { level: 'error' as const },
   };

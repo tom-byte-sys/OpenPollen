@@ -1,12 +1,12 @@
-# Contributing to HiveAgent
+# Contributing to OpenPollen
 
-感谢你对 HiveAgent 的贡献兴趣！
+感谢你对 OpenPollen 的贡献兴趣！
 
 ## 开发环境
 
 ```bash
-git clone https://github.com/user/HiveAgent.git
-cd HiveAgent
+git clone https://github.com/user/OpenPollen.git
+cd OpenPollen
 npm install
 npm run dev
 ```
@@ -41,7 +41,7 @@ npm run test         # 运行测试
 
 ## 报告问题
 
-- 使用 [GitHub Issues](https://github.com/user/HiveAgent/issues) 报告 Bug
+- 使用 [GitHub Issues](https://github.com/user/OpenPollen/issues) 报告 Bug
 - 提供复现步骤、期望行为、实际行为
 - 附上 Node.js 版本和操作系统信息
 
@@ -51,7 +51,7 @@ npm run test         # 运行测试
 
 ## 技能开发
 
-HiveAgent 使用 SKILL.md 标准。参考 `skills/` 目录中的内置技能开发新技能。
+OpenPollen 使用 SKILL.md 标准。参考 `skills/` 目录中的内置技能开发新技能。
 
 ## 许可证
 

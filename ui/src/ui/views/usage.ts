@@ -520,7 +520,7 @@ export function renderUsage(props: UsageProps) {
                   class="usage-export-item"
                   @click=${() =>
                     downloadTextFile(
-                      `hiveagent-usage-sessions-${exportStamp}.csv`,
+                      `openpollen-usage-sessions-${exportStamp}.csv`,
                       buildSessionsCsv(filteredSessions),
                       "text/csv",
                     )}
@@ -532,7 +532,7 @@ export function renderUsage(props: UsageProps) {
                   class="usage-export-item"
                   @click=${() =>
                     downloadTextFile(
-                      `hiveagent-usage-daily-${exportStamp}.csv`,
+                      `openpollen-usage-daily-${exportStamp}.csv`,
                       buildDailyCsv(filteredDaily),
                       "text/csv",
                     )}
@@ -544,7 +544,7 @@ export function renderUsage(props: UsageProps) {
                   class="usage-export-item"
                   @click=${() =>
                     downloadTextFile(
-                      `hiveagent-usage-${exportStamp}.json`,
+                      `openpollen-usage-${exportStamp}.json`,
                       JSON.stringify(
                         {
                           totals: displayTotals,

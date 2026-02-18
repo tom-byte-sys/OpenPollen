@@ -1,10 +1,10 @@
 # WebChat
 
-WebChat is HiveAgent's built-in web chat channel, providing a real-time conversation interface with streaming responses.
+WebChat is OpenPollen's built-in web chat channel, providing a real-time conversation interface with streaming responses.
 
 ## Configuration
 
-Enable WebChat in `hiveagent.json`:
+Enable WebChat in `openpollen.json`:
 
 ```json5
 {
@@ -12,7 +12,7 @@ Enable WebChat in `hiveagent.json`:
     "webchat": {
       "enabled": true,
       "port": 3001,
-      "assistantName": "HiveAgent"
+      "assistantName": "OpenPollen"
     }
   }
 }
@@ -22,7 +22,7 @@ Enable WebChat in `hiveagent.json`:
 |-------|------|---------|-------------|
 | `enabled` | boolean | `true` | Enable WebChat |
 | `port` | number | `3001` | HTTP + WebSocket service port |
-| `assistantName` | string | `HiveAgent` | Assistant name shown in UI |
+| `assistantName` | string | `OpenPollen` | Assistant name shown in UI |
 
 ## Architecture
 
@@ -42,7 +42,7 @@ Browser UI  ←→  WebSocket  ←→  WebchatAdapter  ←→  MessageRouter  �
 
 ### WebSocket Protocol
 
-HiveAgent WebChat uses a custom RPC protocol (v3) with three frame types:
+OpenPollen WebChat uses a custom RPC protocol (v3) with three frame types:
 
 **Request Frame**
 ```json

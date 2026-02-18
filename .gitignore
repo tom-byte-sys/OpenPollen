@@ -9,7 +9,7 @@ dist/
 .env.*.local
 
 # Config with secrets
-hiveagent.json
+openpollen.json
 agenthub.json
 
 # Data

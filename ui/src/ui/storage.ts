@@ -1,4 +1,4 @@
-const KEY = "hiveagent.control.settings.v1";
+const KEY = "openpollen.control.settings.v1";
 
 import type { Locale } from "./i18n/types.ts";
 import type { ThemeMode } from "./theme.ts";

@@ -2,7 +2,7 @@
 layout: home
 
 hero:
-  name: HiveAgent
+  name: OpenPollen
   text: AI Agent 平台
   tagline: 安全、易用、国产化 —— 基于 Claude Agent SDK 构建
   actions:

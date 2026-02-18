@@ -1,6 +1,6 @@
 # Gateway API
 
-HiveAgent Gateway 提供 HTTP REST API，用于健康检查、状态查询和消息发送。
+OpenPollen Gateway 提供 HTTP REST API，用于健康检查、状态查询和消息发送。
 
 默认监听 `http://127.0.0.1:18800`。
 

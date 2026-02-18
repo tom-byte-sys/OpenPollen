@@ -37,8 +37,8 @@ export const TOOL_GROUPS: Record<string, string[]> = {
   "group:messaging": ["message"],
   // Nodes + device tools
   "group:nodes": ["nodes"],
-  // All HiveAgent native tools (excludes provider plugins).
-  "group:hiveagent": [
+  // All OpenPollen native tools (excludes provider plugins).
+  "group:openpollen": [
     "browser",
     "canvas",
     "nodes",

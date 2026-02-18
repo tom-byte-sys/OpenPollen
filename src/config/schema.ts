@@ -45,7 +45,7 @@ export const DingtalkChannelSchema = Type.Object({
 export const WebchatChannelSchema = Type.Object({
   enabled: Type.Boolean({ default: true }),
   port: Type.Number({ default: 3001 }),
-  assistantName: Type.Optional(Type.String({ default: 'HiveAgent' })),
+  assistantName: Type.Optional(Type.String({ default: 'OpenPollen' })),
 });
 
 export const WechatChannelSchema = Type.Object({
@@ -80,7 +80,7 @@ export const ProvidersConfigSchema = Type.Object({
 });
 
 export const SkillsConfigSchema = Type.Object({
-  directory: Type.String({ default: '~/.hiveagent/skills' }),
+  directory: Type.String({ default: '~/.openpollen/skills' }),
   enabled: Type.Array(Type.String(), { default: [] }),
 });
 
@@ -89,8 +89,8 @@ export const MemoryConfigSchema = Type.Object({
     Type.Literal('sqlite'),
     Type.Literal('file'),
   ], { default: 'sqlite' }),
-  sqlitePath: Type.String({ default: '~/.hiveagent/memory.db' }),
-  fileDirectory: Type.String({ default: '~/.hiveagent/memory' }),
+  sqlitePath: Type.String({ default: '~/.openpollen/memory.db' }),
+  fileDirectory: Type.String({ default: '~/.openpollen/memory' }),
 });
 
 export const LoggingConfigSchema = Type.Object({

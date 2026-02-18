@@ -1,6 +1,6 @@
 # Gateway API
 
-HiveAgent Gateway provides HTTP REST API for health checks, status queries, and message sending.
+OpenPollen Gateway provides HTTP REST API for health checks, status queries, and message sending.
 
 Default listen address: `http://127.0.0.1:18800`.
 

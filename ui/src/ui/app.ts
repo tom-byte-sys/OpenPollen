@@ -84,7 +84,7 @@ import { type ChatAttachment, type ChatQueueItem, type CronFormState } from "./u
 
 declare global {
   interface Window {
-    __HIVEAGENT_CONTROL_UI_BASE_PATH__?: string;
+    __OPENPOLLEN_CONTROL_UI_BASE_PATH__?: string;
   }
 }
 
@@ -103,8 +103,8 @@ function resolveOnboardingMode(): boolean {
   return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
 }
 
-@customElement("hiveagent-app")
-export class HiveAgentApp extends LitElement {
+@customElement("openpollen-app")
+export class OpenPollenApp extends LitElement {
   @state() settings: UiSettings = loadSettings();
   @state() locale: Locale = this.settings.locale ?? detectBrowserLocale();
   @state() password = "";

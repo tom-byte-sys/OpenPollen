@@ -1,11 +1,11 @@
 {
-  "name": "hiveagent",
+  "name": "openpollen",
   "version": "0.1.0",
   "description": "安全、易用、国产化的 AI Agent 平台",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "hiveagent": "dist/cli/index.js"
+    "openpollen": "dist/cli/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -24,16 +24,16 @@
     "claude",
     "chatbot"
   ],
-  "author": "HiveAgent Team",
+  "author": "OpenPollen Team",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gyp3085000/HiveAgent.git"
+    "url": "https://github.com/gyp3085000/OpenPollen.git"
   },
   "files": [
     "dist/",
     "skills/",
-    "hiveagent.json.example",
+    "openpollen.json.example",
     "README.md",
     "LICENSE"
   ],

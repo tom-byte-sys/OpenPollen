@@ -4,7 +4,7 @@ Skills define the Agent's capabilities. Each skill is a directory containing a `
 
 ## How It Works
 
-When a user sends a message, HiveAgent's AgentRunner:
+When a user sends a message, OpenPollen's AgentRunner:
 
 1. Scans the installed skills directory for all `SKILL.md` files
 2. Injects all skill instructions into the Agent's system prompt
@@ -17,16 +17,16 @@ Skills can be installed from three sources:
 
 | Source | Install Command | Description |
 |--------|----------------|-------------|
-| Local | `hiveagent skill install ./path` | Copy from local directory |
-| Git | `hiveagent skill install <url>.git` | Clone from Git repository |
-| Marketplace | `hiveagent skill install <name>` | Download from official marketplace |
+| Local | `openpollen skill install ./path` | Copy from local directory |
+| Git | `openpollen skill install <url>.git` | Clone from Git repository |
+| Marketplace | `openpollen skill install <name>` | Download from official marketplace |
 
 ## Managing Skills
 
 ### List Installed Skills
 
 ```bash
-hiveagent skill list
+openpollen skill list
 ```
 
 Example output:
@@ -37,38 +37,38 @@ Example output:
   code-review
     描述: 自动审查代码，给出改进建议
     来源: local
-    路径: ~/.hiveagent/skills/code-review
+    路径: ~/.openpollen/skills/code-review
 
   data-analyst
     描述: 分析数据、生成图表和报告
     来源: local
-    路径: ~/.hiveagent/skills/data-analyst
+    路径: ~/.openpollen/skills/data-analyst
 ```
 
 ### Install Skills
 
 ```bash
 # Search and install from marketplace
-hiveagent skill search coding
-hiveagent skill install <skill-name>
+openpollen skill search coding
+openpollen skill install <skill-name>
 
 # Install from Git
-hiveagent skill install https://github.com/user/my-skill.git
+openpollen skill install https://github.com/user/my-skill.git
 
 # Install from local directory
-hiveagent skill install ./my-skill
+openpollen skill install ./my-skill
 ```
 
 ### Create a New Skill
 
 ```bash
-hiveagent skill create my-skill
+openpollen skill create my-skill
 ```
 
 This creates a scaffold in the skills directory:
 
 ```
-~/.hiveagent/skills/my-skill/
+~/.openpollen/skills/my-skill/
 ├── SKILL.md          # Skill definition file
 ├── examples/         # Examples directory
 └── .source.json      # Source information
@@ -77,35 +77,35 @@ This creates a scaffold in the skills directory:
 ### Uninstall Skills
 
 ```bash
-hiveagent skill remove my-skill
+openpollen skill remove my-skill
 ```
 
 ### Update Skills
 
 ```bash
 # Only supported for Git-sourced skills
-hiveagent skill update my-skill
+openpollen skill update my-skill
 ```
 
 ## Skills Marketplace
 
-HiveAgent provides an official skills marketplace for searching, installing, and publishing skills.
+OpenPollen provides an official skills marketplace for searching, installing, and publishing skills.
 
 ### Search Skills
 
 ```bash
-hiveagent skill search <keyword>
-hiveagent skill search coding --category coding --sort downloads
+openpollen skill search <keyword>
+openpollen skill search coding --category coding --sort downloads
 ```
 
 ### Publish Skills
 
 ```bash
 # Login first
-hiveagent login
+openpollen login
 
 # Publish
-hiveagent skill publish my-skill
+openpollen skill publish my-skill
 ```
 
 Pricing options:
@@ -116,13 +116,13 @@ Pricing options:
 ### View Earnings
 
 ```bash
-hiveagent skill earnings
-hiveagent skill earnings --month 2026-02
+openpollen skill earnings
+openpollen skill earnings --month 2026-02
 ```
 
 ## Built-in Skills
 
-HiveAgent ships with these built-in skills:
+OpenPollen ships with these built-in skills:
 
 ### code-review
 

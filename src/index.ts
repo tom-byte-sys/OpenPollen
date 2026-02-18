@@ -16,17 +16,17 @@ import type { ChannelAdapter } from './channels/interface.js';
 import type { MemoryStore } from './memory/interface.js';
 import type { AppConfig } from './config/schema.js';
 
-export interface HiveAgentInstance {
+export interface OpenPollenInstance {
   config: AppConfig;
   start(): Promise<void>;
   stop(): Promise<void>;
 }
 
-export async function createHiveAgent(configPath?: string): Promise<HiveAgentInstance> {
+export async function createOpenPollen(configPath?: string): Promise<OpenPollenInstance> {
   // 1. 加载配置
   const config = loadConfig(configPath);
 
-  // 2. 初始化日志（仅写文件，不输出到终端；用户通过 hiveagent logs -f 查看）
+  // 2. 初始化日志（仅写文件，不输出到终端；用户通过 openpollen logs -f 查看）
   const log = initLogger({
     level: config.logging.level,
     file: config.logging.file,
@@ -109,7 +109,7 @@ export async function createHiveAgent(configPath?: string): Promise<HiveAgentIns
   return {
     config,
     async start() {
-      mainLog.info('HiveAgent 启动中...');
+      mainLog.info('OpenPollen 启动中...');
 
       // 启动会话 GC
       sessionManager.startGC();
@@ -134,11 +134,11 @@ export async function createHiveAgent(configPath?: string): Promise<HiveAgentIns
         gateway: `http://${config.gateway.host}:${config.gateway.port}`,
         channels: [...channels.map(c => c.name), ...channelPlugins.map(cp => cp.name)],
         skills: skillManager.list().map(s => s.name),
-      }, 'HiveAgent 已启动');
+      }, 'OpenPollen 已启动');
     },
 
     async stop() {
-      mainLog.info('HiveAgent 停止中...');
+      mainLog.info('OpenPollen 停止中...');
 
       // 停止所有插件
       await pluginRegistry.stopAll();
@@ -161,7 +161,7 @@ export async function createHiveAgent(configPath?: string): Promise<HiveAgentIns
       // 关闭记忆存储
       await memory.close();
 
-      mainLog.info('HiveAgent 已停止');
+      mainLog.info('OpenPollen 已停止');
     },
   };
 }
@@ -170,7 +170,7 @@ export async function createHiveAgent(configPath?: string): Promise<HiveAgentIns
 const entryFile = process.argv[1] ?? '';
 const isDirectRun = entryFile.endsWith('src/index.js') || entryFile.endsWith('src/index.ts');
 if (isDirectRun) {
-  createHiveAgent()
+  createOpenPollen()
     .then(hub => hub.start())
     .catch(error => {
       console.error('启动失败:', error);

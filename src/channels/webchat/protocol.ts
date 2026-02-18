@@ -1,4 +1,4 @@
-// HiveAgent WebSocket RPC Protocol v3 — frame types, constants, error codes
+// OpenPollen WebSocket RPC Protocol v3 — frame types, constants, error codes
 
 export const PROTOCOL_VERSION = 3;
 

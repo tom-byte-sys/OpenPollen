@@ -1,4 +1,4 @@
-import type { HiveAgentApp } from "./app.ts";
+import type { OpenPollenApp } from "./app.ts";
 import type { NostrProfile } from "./types.ts";
 import {
   loadChannels,
@@ -9,28 +9,28 @@ import {
 import { loadConfig, saveConfig } from "./controllers/config.ts";
 import { createNostrProfileFormState } from "./views/channels.nostr-profile-form.ts";
 
-export async function handleWhatsAppStart(host: HiveAgentApp, force: boolean) {
+export async function handleWhatsAppStart(host: OpenPollenApp, force: boolean) {
   await startWhatsAppLogin(host, force);
   await loadChannels(host, true);
 }
 
-export async function handleWhatsAppWait(host: HiveAgentApp) {
+export async function handleWhatsAppWait(host: OpenPollenApp) {
   await waitWhatsAppLogin(host);
   await loadChannels(host, true);
 }
 
-export async function handleWhatsAppLogout(host: HiveAgentApp) {
+export async function handleWhatsAppLogout(host: OpenPollenApp) {
   await logoutWhatsApp(host);
   await loadChannels(host, true);
 }
 
-export async function handleChannelConfigSave(host: HiveAgentApp) {
+export async function handleChannelConfigSave(host: OpenPollenApp) {
   await saveConfig(host);
   await loadConfig(host);
   await loadChannels(host, true);
 }
 
-export async function handleChannelConfigReload(host: HiveAgentApp) {
+export async function handleChannelConfigReload(host: OpenPollenApp) {
   await loadConfig(host);
   await loadChannels(host, true);
 }
@@ -57,7 +57,7 @@ function parseValidationErrors(details: unknown): Record<string, string> {
   return errors;
 }
 
-function resolveNostrAccountId(host: HiveAgentApp): string {
+function resolveNostrAccountId(host: OpenPollenApp): string {
   const accounts = host.channelsSnapshot?.channelAccounts?.nostr ?? [];
   return accounts[0]?.accountId ?? host.nostrProfileAccountId ?? "default";
 }
@@ -66,7 +66,7 @@ function buildNostrProfileUrl(accountId: string, suffix = ""): string {
   return `/api/channels/nostr/${encodeURIComponent(accountId)}/profile${suffix}`;
 }
 
-function resolveGatewayHttpAuthHeader(host: HiveAgentApp): string | null {
+function resolveGatewayHttpAuthHeader(host: OpenPollenApp): string | null {
   const deviceToken = host.hello?.auth?.deviceToken?.trim();
   if (deviceToken) {
     return `Bearer ${deviceToken}`;
@@ -82,13 +82,13 @@ function resolveGatewayHttpAuthHeader(host: HiveAgentApp): string | null {
   return null;
 }
 
-function buildGatewayHttpHeaders(host: HiveAgentApp): Record<string, string> {
+function buildGatewayHttpHeaders(host: OpenPollenApp): Record<string, string> {
   const authorization = resolveGatewayHttpAuthHeader(host);
   return authorization ? { Authorization: authorization } : {};
 }
 
 export function handleNostrProfileEdit(
-  host: HiveAgentApp,
+  host: OpenPollenApp,
   accountId: string,
   profile: NostrProfile | null,
 ) {
@@ -96,13 +96,13 @@ export function handleNostrProfileEdit(
   host.nostrProfileFormState = createNostrProfileFormState(profile ?? undefined);
 }
 
-export function handleNostrProfileCancel(host: HiveAgentApp) {
+export function handleNostrProfileCancel(host: OpenPollenApp) {
   host.nostrProfileFormState = null;
   host.nostrProfileAccountId = null;
 }
 
 export function handleNostrProfileFieldChange(
-  host: HiveAgentApp,
+  host: OpenPollenApp,
   field: keyof NostrProfile,
   value: string,
 ) {
@@ -123,7 +123,7 @@ export function handleNostrProfileFieldChange(
   };
 }
 
-export function handleNostrProfileToggleAdvanced(host: HiveAgentApp) {
+export function handleNostrProfileToggleAdvanced(host: OpenPollenApp) {
   const state = host.nostrProfileFormState;
   if (!state) {
     return;
@@ -134,7 +134,7 @@ export function handleNostrProfileToggleAdvanced(host: HiveAgentApp) {
   };
 }
 
-export async function handleNostrProfileSave(host: HiveAgentApp) {
+export async function handleNostrProfileSave(host: OpenPollenApp) {
   const state = host.nostrProfileFormState;
   if (!state || state.saving) {
     return;
@@ -206,7 +206,7 @@ export async function handleNostrProfileSave(host: HiveAgentApp) {
   }
 }
 
-export async function handleNostrProfileImport(host: HiveAgentApp) {
+export async function handleNostrProfileImport(host: OpenPollenApp) {
   const state = host.nostrProfileFormState;
   if (!state || state.importing) {
     return;

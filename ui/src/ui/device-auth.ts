@@ -5,7 +5,7 @@ import {
   normalizeDeviceAuthScopes,
 } from "../shared/device-auth.js";
 
-const STORAGE_KEY = "hiveagent.device.auth.v1";
+const STORAGE_KEY = "openpollen.device.auth.v1";
 
 function readStore(): DeviceAuthStore | null {
   try {

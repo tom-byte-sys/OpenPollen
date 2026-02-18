@@ -1,8 +1,8 @@
-# HiveAgent
+# OpenPollen
 
 > 安全、易用、国产化的 AI Agent 平台
 
-HiveAgent 是一个开源的多平台 AI Agent 框架，基于 Claude Agent SDK 构建。支持钉钉、企业微信、Telegram 等聊天平台接入，通过 SKILL.md（Agent Skills 开放标准）实现技能的安装、发现和执行。
+OpenPollen 是一个开源的多平台 AI Agent 框架，基于 Claude Agent SDK 构建。支持钉钉、企业微信、Telegram 等聊天平台接入，通过 SKILL.md（Agent Skills 开放标准）实现技能的安装、发现和执行。
 
 ## 特性
 
@@ -18,13 +18,13 @@ HiveAgent 是一个开源的多平台 AI Agent 框架，基于 Claude Agent SDK 
 ### 安装
 
 ```bash
-npm install -g hiveagent
+npm install -g openpollen
 ```
 
 ### 初始化
 
 ```bash
-hiveagent init
+openpollen init
 ```
 
 交互式向导将引导你完成：
@@ -35,7 +35,7 @@ hiveagent init
 ### 启动
 
 ```bash
-hiveagent start
+openpollen start
 ```
 
 ## 技能系统
@@ -57,24 +57,24 @@ allowed-tools: Read, Grep, Glob
 ### 技能管理
 
 ```bash
-hiveagent skill list                    # 列出已安装技能
-hiveagent skill install code-review     # 从市场安装
-hiveagent skill install ./my-skill/     # 从本地安装
-hiveagent skill remove code-review      # 卸载技能
-hiveagent skill create my-skill         # 创建新技能
+openpollen skill list                    # 列出已安装技能
+openpollen skill install code-review     # 从市场安装
+openpollen skill install ./my-skill/     # 从本地安装
+openpollen skill remove code-review      # 卸载技能
+openpollen skill create my-skill         # 创建新技能
 ```
 
 ## 配置
 
-配置文件 `hiveagent.json`（JSON5 格式），支持 `${ENV_VAR}` 环境变量替换。
+配置文件 `openpollen.json`（JSON5 格式），支持 `${ENV_VAR}` 环境变量替换。
 
-参见 [hiveagent.json.example](./hiveagent.json.example) 了解完整配置项。
+参见 [openpollen.json.example](./openpollen.json.example) 了解完整配置项。
 
 ## 开发
 
 ```bash
-git clone https://github.com/gyp3085000/HiveAgent.git
-cd HiveAgent
+git clone https://github.com/gyp3085000/OpenPollen.git
+cd OpenPollen
 npm install
 npm run dev
 ```

@@ -7,10 +7,10 @@ export type SkillGroup = {
 };
 
 const SKILL_SOURCE_GROUPS: Array<{ id: string; label: string; sources: string[] }> = [
-  { id: "workspace", label: "skills.group.workspace", sources: ["hiveagent-workspace"] },
-  { id: "built-in", label: "skills.group.builtIn", sources: ["hiveagent-bundled"] },
-  { id: "installed", label: "skills.group.installed", sources: ["hiveagent-managed"] },
-  { id: "extra", label: "skills.group.extra", sources: ["hiveagent-extra"] },
+  { id: "workspace", label: "skills.group.workspace", sources: ["openpollen-workspace"] },
+  { id: "built-in", label: "skills.group.builtIn", sources: ["openpollen-bundled"] },
+  { id: "installed", label: "skills.group.installed", sources: ["openpollen-managed"] },
+  { id: "extra", label: "skills.group.extra", sources: ["openpollen-extra"] },
 ];
 
 export function groupSkills(skills: SkillStatusEntry[]): SkillGroup[] {

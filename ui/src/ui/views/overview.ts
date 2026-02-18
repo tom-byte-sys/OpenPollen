@@ -51,13 +51,13 @@ export function renderOverview(props: OverviewProps) {
         <div class="muted" style="margin-top: 8px">
           ${t('overview.authRequired')}
           <div style="margin-top: 6px">
-            <span class="mono">hiveagent dashboard --no-open</span> → ${t('overview.openControlUi')}<br />
-            <span class="mono">hiveagent doctor --generate-gateway-token</span> → ${t('overview.setToken')}
+            <span class="mono">openpollen dashboard --no-open</span> → ${t('overview.openControlUi')}<br />
+            <span class="mono">openpollen doctor --generate-gateway-token</span> → ${t('overview.setToken')}
           </div>
           <div style="margin-top: 6px">
             <a
               class="session-link"
-              href="https://github.com/anthropics/hiveagent/web/dashboard"
+              href="https://github.com/anthropics/openpollen/web/dashboard"
               target="_blank"
               rel="noreferrer"
               title="${t('overview.docsControlUiAuth')}"
@@ -73,7 +73,7 @@ export function renderOverview(props: OverviewProps) {
         <div style="margin-top: 6px">
           <a
             class="session-link"
-            href="https://github.com/anthropics/hiveagent/web/dashboard"
+            href="https://github.com/anthropics/openpollen/web/dashboard"
             target="_blank"
             rel="noreferrer"
             title="${t('overview.docsControlUiAuth')}"
@@ -106,7 +106,7 @@ export function renderOverview(props: OverviewProps) {
         <div style="margin-top: 6px">
           <a
             class="session-link"
-            href="https://github.com/anthropics/hiveagent/gateway/tailscale"
+            href="https://github.com/anthropics/openpollen/gateway/tailscale"
             target="_blank"
             rel="noreferrer"
             title="${t('overview.docsTailscale')}"
@@ -115,7 +115,7 @@ export function renderOverview(props: OverviewProps) {
           <span class="muted"> · </span>
           <a
             class="session-link"
-            href="https://github.com/anthropics/hiveagent/web/control-ui#insecure-http"
+            href="https://github.com/anthropics/openpollen/web/control-ui#insecure-http"
             target="_blank"
             rel="noreferrer"
             title="${t('overview.docsInsecureHttp')}"
@@ -155,7 +155,7 @@ export function renderOverview(props: OverviewProps) {
                       const v = (e.target as HTMLInputElement).value;
                       props.onSettingsChange({ ...props.settings, token: v });
                     }}
-                    placeholder="HIVEAGENT_GATEWAY_TOKEN"
+                    placeholder="OPENPOLLEN_GATEWAY_TOKEN"
                   />
                 </label>
                 <label class="field">

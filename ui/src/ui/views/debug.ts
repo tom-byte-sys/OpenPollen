@@ -52,7 +52,7 @@ export function renderDebug(props: DebugProps) {
               securitySummary
                 ? html`<div class="callout ${securityTone}" style="margin-top: 8px;">
                   ${t('debug.securityAudit')} ${securityLabel}${info > 0 ? ` · ${t('debug.infoSuffix', { count: info })}` : ""}.
-                  <span class="mono">hiveagent security audit --deep</span> ${t('debug.runAuditHint')}
+                  <span class="mono">openpollen security audit --deep</span> ${t('debug.runAuditHint')}
                 </div>`
                 : nothing
             }

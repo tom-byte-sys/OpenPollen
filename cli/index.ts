@@ -6,15 +6,15 @@ import { existsSync, mkdirSync, writeFileSync, readFileSync, watchFile, statSync
 import { resolve, dirname } from 'node:path';
 import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { createHiveAgent } from '../src/index.js';
+import { createOpenPollen } from '../src/index.js';
 import { loadConfig, resolveConfigPath } from '../src/config/loader.js';
 import { SkillManager } from '../src/agent/skill-manager.js';
 import { MarketplaceClient } from '../src/agent/marketplace-client.js';
 import { BeeliveClient } from '../src/agent/beelive-client.js';
 import { maskSecret } from '../src/utils/crypto.js';
 
-const PID_FILE = resolve(homedir(), '.hiveagent', 'hiveagent.pid');
-const AUTH_FILE = resolve(homedir(), '.hiveagent', 'auth.json');
+const PID_FILE = resolve(homedir(), '.openpollen', 'openpollen.pid');
+const AUTH_FILE = resolve(homedir(), '.openpollen', 'auth.json');
 
 function loadAuthToken(): string | null {
   try {
@@ -34,7 +34,7 @@ function createMarketplaceClient(configPath?: string): MarketplaceClient {
 }
 
 function writePidFile(): void {
-  const dir = resolve(homedir(), '.hiveagent');
+  const dir = resolve(homedir(), '.openpollen');
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
   writeFileSync(PID_FILE, String(process.pid));
 }
@@ -55,10 +55,10 @@ function getBuiltinSkillsDir(): string {
 }
 
 /**
- * 保存 auth token 到 ~/.hiveagent/auth.json
+ * 保存 auth token 到 ~/.openpollen/auth.json
  */
 function saveAuthToken(token: string, email: string): void {
-  const authDir = resolve(homedir(), '.hiveagent');
+  const authDir = resolve(homedir(), '.openpollen');
   if (!existsSync(authDir)) mkdirSync(authDir, { recursive: true });
   const authPath = resolve(authDir, 'auth.json');
   writeFileSync(authPath, JSON.stringify({
@@ -103,7 +103,7 @@ async function showAccountStatus(client: BeeliveClient): Promise<void> {
  * 更新配置文件中的 providers.beelive
  */
 function updateConfigProviders(apiKey: string, configPath?: string): void {
-  const resolvedPath = resolveConfigPath(configPath) ?? resolve(homedir(), '.hiveagent', 'hiveagent.json');
+  const resolvedPath = resolveConfigPath(configPath) ?? resolve(homedir(), '.openpollen', 'openpollen.json');
 
   let config: Record<string, unknown> = {};
   if (existsSync(resolvedPath)) {
@@ -141,24 +141,24 @@ function createBeeliveClient(token?: string): BeeliveClient {
 const program = new Command();
 
 program
-  .name('hiveagent')
-  .description('HiveAgent — 安全、易用、国产化的 AI Agent 平台')
+  .name('openpollen')
+  .description('OpenPollen — 安全、易用、国产化的 AI Agent 平台')
   .version('0.1.0');
 
 // === start ===
 program
   .command('start')
-  .description('启动 HiveAgent Gateway')
+  .description('启动 OpenPollen Gateway')
   .option('-c, --config <path>', '配置文件路径')
   .option('-d, --daemon', '后台运行')
   .action(async (options: { config?: string; daemon?: boolean }) => {
     try {
-      const hub = await createHiveAgent(options.config);
+      const hub = await createOpenPollen(options.config);
       await hub.start();
 
       writePidFile();
 
-      console.log('\n  HiveAgent v0.1.0 已启动');
+      console.log('\n  OpenPollen v0.1.0 已启动');
       console.log(`  Gateway: http://${hub.config.gateway.host}:${hub.config.gateway.port}`);
 
       if (hub.config.channels.webchat?.enabled) {
@@ -213,7 +213,7 @@ program
       }
     };
 
-    console.log('\n  欢迎使用 HiveAgent!\n');
+    console.log('\n  欢迎使用 OpenPollen!\n');
 
     // 1. 选择模型来源
     const providerIndex = await choose('选择 AI 模型来源:', [
@@ -253,7 +253,7 @@ program
             try {
               const me = await atClient.getMe();
               if (me.status === 'pending') {
-                console.log('  账号待激活，请查收邮件完成激活后运行 `hiveagent login` 获取 API Key。');
+                console.log('  账号待激活，请查收邮件完成激活后运行 `openpollen login` 获取 API Key。');
               } else {
                 // 获取 Desktop API Key
                 try {
@@ -288,14 +288,14 @@ program
                   console.log(`  Desktop Key 已存在 (${keyResult.key_prefix})，请手动输入。`);
                 }
               } catch {
-                console.log('  请运行 `hiveagent login` 获取 API Key。');
+                console.log('  请运行 `openpollen login` 获取 API Key。');
               }
             }
 
             await showAccountStatus(atClient);
           } catch (err) {
             console.error('  注册失败:', err instanceof Error ? err.message : err);
-            console.log('  提示: 如已有账号，可运行 `hiveagent login` 登录。');
+            console.log('  提示: 如已有账号，可运行 `openpollen login` 登录。');
           }
         }
       } else {
@@ -337,7 +337,7 @@ program
             await showAccountStatus(atClient);
           } catch (err) {
             console.error('  登录失败:', err instanceof Error ? err.message : err);
-            console.log('  提示: 可稍后运行 `hiveagent login` 重试。');
+            console.log('  提示: 可稍后运行 `openpollen login` 重试。');
           }
         }
       }
@@ -383,18 +383,18 @@ program
       },
       channels,
       providers,
-      skills: { directory: '~/.hiveagent/skills', enabled: [] },
-      memory: { backend: 'sqlite', sqlitePath: '~/.hiveagent/memory.db', fileDirectory: '~/.hiveagent/memory' },
-      logging: { level: 'info', file: '~/.hiveagent/logs/hiveagent.log' },
+      skills: { directory: '~/.openpollen/skills', enabled: [] },
+      memory: { backend: 'sqlite', sqlitePath: '~/.openpollen/memory.db', fileDirectory: '~/.openpollen/memory' },
+      logging: { level: 'info', file: '~/.openpollen/logs/openpollen.log' },
     };
 
     // 4. 写入配置文件
-    const hiveDir = resolve(homedir(), '.hiveagent');
+    const hiveDir = resolve(homedir(), '.openpollen');
     if (!existsSync(hiveDir)) {
       mkdirSync(hiveDir, { recursive: true });
     }
 
-    const configPath = resolve(hiveDir, 'hiveagent.json');
+    const configPath = resolve(hiveDir, 'openpollen.json');
     const overwrite = existsSync(configPath)
       ? (await ask(`\n配置文件已存在 (${configPath})，是否覆盖? (y/N): `)).toLowerCase() === 'y'
       : true;
@@ -407,7 +407,7 @@ program
     }
 
     // 5. 创建技能目录
-    const skillsDir = resolve(homedir(), '.hiveagent', 'skills');
+    const skillsDir = resolve(homedir(), '.openpollen', 'skills');
     if (!existsSync(skillsDir)) {
       mkdirSync(skillsDir, { recursive: true });
       console.log(`  技能目录已创建: ${skillsDir}`);
@@ -442,12 +442,12 @@ program
     }
 
     // 7. 创建日志目录
-    const logsDir = resolve(homedir(), '.hiveagent', 'logs');
+    const logsDir = resolve(homedir(), '.openpollen', 'logs');
     if (!existsSync(logsDir)) {
       mkdirSync(logsDir, { recursive: true });
     }
 
-    console.log('\n  初始化完成! 运行 `hiveagent start` 启动。\n');
+    console.log('\n  初始化完成! 运行 `openpollen start` 启动。\n');
 
     rl.close();
   });
@@ -511,10 +511,10 @@ program
 // === stop ===
 program
   .command('stop')
-  .description('停止 HiveAgent Gateway')
+  .description('停止 OpenPollen Gateway')
   .action(() => {
     if (!existsSync(PID_FILE)) {
-      console.log('HiveAgent 未运行（PID 文件不存在）。');
+      console.log('OpenPollen 未运行（PID 文件不存在）。');
       return;
     }
 
@@ -537,7 +537,7 @@ program
     }
 
     // 发送 SIGTERM
-    console.log(`正在停止 HiveAgent (PID: ${pid})...`);
+    console.log(`正在停止 OpenPollen (PID: ${pid})...`);
     process.kill(pid, 'SIGTERM');
 
     // 等待确认进程退出
@@ -553,7 +553,7 @@ program
       } catch {
         clearInterval(interval);
         removePidFile();
-        console.log('HiveAgent 已停止。');
+        console.log('OpenPollen 已停止。');
       }
     }, 500);
   });
@@ -569,9 +569,9 @@ program
       const url = `http://${config.gateway.host}:${config.gateway.port}/api/status`;
       const response = await fetch(url);
       const data = await response.json();
-      console.log('HiveAgent 状态:', JSON.stringify(data, null, 2));
+      console.log('OpenPollen 状态:', JSON.stringify(data, null, 2));
     } catch {
-      console.log('HiveAgent 未运行');
+      console.log('OpenPollen 未运行');
     }
   });
 
@@ -606,7 +606,7 @@ skillCmd
     const skills = manager.discover();
 
     if (skills.length === 0) {
-      console.log('暂无已安装技能。使用 `hiveagent skill install <name>` 安装技能。');
+      console.log('暂无已安装技能。使用 `openpollen skill install <name>` 安装技能。');
       return;
     }
 
@@ -654,7 +654,7 @@ skillCmd
               const priceStr = s.pricing_model === 'free' ? '免费' : `¥${s.price}`;
               console.log(`  ${s.name} - ${s.display_name} (${priceStr})`);
             }
-            console.log(`\n使用精确名称安装: hiveagent skill install <name>`);
+            console.log(`\n使用精确名称安装: openpollen skill install <name>`);
           }
           return;
         }
@@ -671,7 +671,7 @@ skillCmd
         // 付费技能
         const token = loadAuthToken();
         if (!token) {
-          console.log(`技能 "${exact.display_name}" 需要付费 (¥${exact.price})。请先登录: hiveagent login`);
+          console.log(`技能 "${exact.display_name}" 需要付费 (¥${exact.price})。请先登录: openpollen login`);
           return;
         }
 
@@ -805,7 +805,7 @@ skillCmd
         console.log('');
       }
 
-      console.log(`安装: hiveagent skill install <name>`);
+      console.log(`安装: openpollen skill install <name>`);
     } catch (error) {
       console.error('搜索失败:', error instanceof Error ? error.message : error);
     }
@@ -818,7 +818,7 @@ skillCmd
   .action(async (name: string, options: { config?: string }) => {
     const token = loadAuthToken();
     if (!token) {
-      console.log('请先登录: hiveagent login');
+      console.log('请先登录: openpollen login');
       return;
     }
 
@@ -919,7 +919,7 @@ skillCmd
   .action(async (options: { config?: string; month?: string }) => {
     const token = loadAuthToken();
     if (!token) {
-      console.log('请先登录: hiveagent login');
+      console.log('请先登录: openpollen login');
       return;
     }
 
@@ -999,7 +999,7 @@ modelCmd
       }
 
       if (!providers.beelive && !providers.agentterm && !providers.anthropic && !providers.ollama && !providers.openai) {
-        console.log('  (无) 请运行 `hiveagent init` 配置 Provider。');
+        console.log('  (无) 请运行 `openpollen init` 配置 Provider。');
       }
 
       // 若已登录 Beelive，显示远程套餐信息
@@ -1062,7 +1062,7 @@ channelCmd
           console.log(`WebChat 返回状态码 ${response.status}，请检查是否已启动。`);
         }
       } catch {
-        console.log(`无法连接 WebChat (端口 ${port})。请先运行 \`hiveagent start\`。`);
+        console.log(`无法连接 WebChat (端口 ${port})。请先运行 \`openpollen start\`。`);
       }
     } else if (name === 'dingtalk') {
       // 通过 Gateway HTTP API 发送测试消息
@@ -1071,7 +1071,7 @@ channelCmd
         const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: 'HiveAgent 测试消息', userId: 'test-user' }),
+          body: JSON.stringify({ message: 'OpenPollen 测试消息', userId: 'test-user' }),
         });
         const data = await response.json() as { response?: string; error?: string };
         if (data.response) {
@@ -1080,7 +1080,7 @@ channelCmd
           console.log(`Gateway 返回: ${JSON.stringify(data)}`);
         }
       } catch {
-        console.log('无法连接 Gateway。请先运行 `hiveagent start`。');
+        console.log('无法连接 Gateway。请先运行 `openpollen start`。');
       }
     } else {
       console.log(`未知或未启用的平台: ${name}`);
@@ -1096,10 +1096,10 @@ program
   .option('-n, --lines <n>', '显示最近 N 行', '50')
   .option('-f, --follow', '持续跟踪日志')
   .action(async (options: { level?: string; lines: string; follow?: boolean }) => {
-    const logFile = resolve(homedir(), '.hiveagent', 'logs', 'hiveagent.log');
+    const logFile = resolve(homedir(), '.openpollen', 'logs', 'openpollen.log');
 
     if (!existsSync(logFile)) {
-      console.log('日志文件不存在。HiveAgent 是否已经运行过?');
+      console.log('日志文件不存在。OpenPollen 是否已经运行过?');
       console.log(`预期路径: ${logFile}`);
       return;
     }

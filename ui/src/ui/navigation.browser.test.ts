@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { HiveAgentApp } from "./app.ts";
+import { OpenPollenApp } from "./app.ts";
 import "../styles.css";
 
 // oxlint-disable-next-line typescript/unbound-method
-const originalConnect = HiveAgentApp.prototype.connect;
+const originalConnect = OpenPollenApp.prototype.connect;
 
 function mountApp(pathname: string) {
   window.history.replaceState({}, "", pathname);
-  const app = document.createElement("hiveagent-app") as HiveAgentApp;
+  const app = document.createElement("openpollen-app") as OpenPollenApp;
   document.body.append(app);
   return app;
 }
@@ -19,17 +19,17 @@ function nextFrame() {
 }
 
 beforeEach(() => {
-  HiveAgentApp.prototype.connect = () => {
+  OpenPollenApp.prototype.connect = () => {
     // no-op: avoid real gateway WS connections in browser tests
   };
-  window.__HIVEAGENT_CONTROL_UI_BASE_PATH__ = undefined;
+  window.__OPENPOLLEN_CONTROL_UI_BASE_PATH__ = undefined;
   localStorage.clear();
   document.body.innerHTML = "";
 });
 
 afterEach(() => {
-  HiveAgentApp.prototype.connect = originalConnect;
-  window.__HIVEAGENT_CONTROL_UI_BASE_PATH__ = undefined;
+  OpenPollenApp.prototype.connect = originalConnect;
+  window.__OPENPOLLEN_CONTROL_UI_BASE_PATH__ = undefined;
   localStorage.clear();
   document.body.innerHTML = "";
 });
@@ -53,22 +53,22 @@ describe("control UI routing", () => {
   });
 
   it("infers nested base paths", async () => {
-    const app = mountApp("/apps/hiveagent/cron");
+    const app = mountApp("/apps/openpollen/cron");
     await app.updateComplete;
 
-    expect(app.basePath).toBe("/apps/hiveagent");
+    expect(app.basePath).toBe("/apps/openpollen");
     expect(app.tab).toBe("cron");
-    expect(window.location.pathname).toBe("/apps/hiveagent/cron");
+    expect(window.location.pathname).toBe("/apps/openpollen/cron");
   });
 
   it("honors explicit base path overrides", async () => {
-    window.__HIVEAGENT_CONTROL_UI_BASE_PATH__ = "/hiveagent";
-    const app = mountApp("/hiveagent/sessions");
+    window.__OPENPOLLEN_CONTROL_UI_BASE_PATH__ = "/openpollen";
+    const app = mountApp("/openpollen/sessions");
     await app.updateComplete;
 
-    expect(app.basePath).toBe("/hiveagent");
+    expect(app.basePath).toBe("/openpollen");
     expect(app.tab).toBe("sessions");
-    expect(window.location.pathname).toBe("/hiveagent/sessions");
+    expect(window.location.pathname).toBe("/openpollen/sessions");
   });
 
   it("updates the URL when clicking nav items", async () => {
@@ -186,7 +186,7 @@ describe("control UI routing", () => {
 
   it("hydrates token from URL params even when settings already set", async () => {
     localStorage.setItem(
-      "hiveagent.control.settings.v1",
+      "openpollen.control.settings.v1",
       JSON.stringify({ token: "existing-token" }),
     );
     const app = mountApp("/ui/overview?token=abc123");

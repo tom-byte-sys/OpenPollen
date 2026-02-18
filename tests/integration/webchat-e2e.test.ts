@@ -39,7 +39,7 @@ function createTestConfig(): AppConfig {
         baseUrl: 'http://127.0.0.1:19999',
       },
     },
-    skills: { directory: '/tmp/hiveagent-e2e-skills', enabled: [] },
+    skills: { directory: '/tmp/openpollen-e2e-skills', enabled: [] },
     memory: { backend: 'sqlite' as const, sqlitePath: '/tmp/e2e-test.db', fileDirectory: '/tmp/e2e-memory' },
     logging: { level: 'error' as const },
   };

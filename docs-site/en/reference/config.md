@@ -1,6 +1,6 @@
 # Configuration Reference
 
-HiveAgent uses JSON5 format configuration files with support for comments and trailing commas. The config file is located at `~/.hiveagent/hiveagent.json`, or can be placed as `hiveagent.json` in the project root.
+OpenPollen uses JSON5 format configuration files with support for comments and trailing commas. The config file is located at `~/.openpollen/openpollen.json`, or can be placed as `openpollen.json` in the project root.
 
 Environment variables can be referenced using `${VAR_NAME}` syntax.
 
@@ -57,7 +57,7 @@ Built-in WebChat web interface.
 |-------|------|---------|-------------|
 | `enabled` | boolean | `true` | Enable WebChat |
 | `port` | number | `3001` | WebChat service port |
-| `assistantName` | string | `HiveAgent` | Assistant name displayed in UI |
+| `assistantName` | string | `OpenPollen` | Assistant name displayed in UI |
 
 ### channels.dingtalk
 
@@ -133,7 +133,7 @@ Skills system configuration.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `directory` | string | `~/.hiveagent/skills` | Skills storage directory |
+| `directory` | string | `~/.openpollen/skills` | Skills storage directory |
 | `enabled` | string[] | `[]` | Enabled skills whitelist (empty = all enabled) |
 
 ## memory
@@ -143,8 +143,8 @@ Memory system configuration.
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `backend` | string | `sqlite` | Storage backend: `sqlite` / `file` |
-| `sqlitePath` | string | `~/.hiveagent/memory.db` | SQLite database path |
-| `fileDirectory` | string | `~/.hiveagent/memory` | Markdown file storage directory |
+| `sqlitePath` | string | `~/.openpollen/memory.db` | SQLite database path |
+| `fileDirectory` | string | `~/.openpollen/memory` | Markdown file storage directory |
 
 ## logging
 
@@ -196,8 +196,8 @@ Skills marketplace configuration.
       "apiKey": "${ANTHROPIC_API_KEY}"
     }
   },
-  "skills": { "directory": "~/.hiveagent/skills", "enabled": [] },
-  "memory": { "backend": "sqlite", "sqlitePath": "~/.hiveagent/memory.db" },
-  "logging": { "level": "info", "file": "~/.hiveagent/logs/hiveagent.log" }
+  "skills": { "directory": "~/.openpollen/skills", "enabled": [] },
+  "memory": { "backend": "sqlite", "sqlitePath": "~/.openpollen/memory.db" },
+  "logging": { "level": "info", "file": "~/.openpollen/logs/openpollen.log" }
 }
 ```

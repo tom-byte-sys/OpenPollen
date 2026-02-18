@@ -1,16 +1,16 @@
 export const GATEWAY_CLIENT_IDS = {
   WEBCHAT_UI: "webchat-ui",
-  CONTROL_UI: "hiveagent-control-ui",
+  CONTROL_UI: "openpollen-control-ui",
   WEBCHAT: "webchat",
   CLI: "cli",
   GATEWAY_CLIENT: "gateway-client",
-  MACOS_APP: "hiveagent-macos",
-  IOS_APP: "hiveagent-ios",
-  ANDROID_APP: "hiveagent-android",
+  MACOS_APP: "openpollen-macos",
+  IOS_APP: "openpollen-ios",
+  ANDROID_APP: "openpollen-android",
   NODE_HOST: "node-host",
   TEST: "test",
   FINGERPRINT: "fingerprint",
-  PROBE: "hiveagent-probe",
+  PROBE: "openpollen-probe",
 } as const;
 
 export type GatewayClientId = (typeof GATEWAY_CLIENT_IDS)[keyof typeof GATEWAY_CLIENT_IDS];

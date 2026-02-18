@@ -42,7 +42,7 @@ const SUPPORTED_METHODS = [
 const SUPPORTED_EVENTS = ['chat', 'tick'];
 
 /**
- * Runs the HiveAgent handshake on a newly-connected WebSocket.
+ * Runs the OpenPollen handshake on a newly-connected WebSocket.
  * Returns the connection ID on success, or null if handshake fails.
  *
  * Flow:

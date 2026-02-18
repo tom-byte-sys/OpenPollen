@@ -71,7 +71,7 @@ function createHost() {
     agentsList: null,
     agentsError: null,
     debugHealth: null,
-    assistantName: "HiveAgent",
+    assistantName: "OpenPollen",
     assistantAvatar: null,
     assistantAgentId: null,
     sessionKey: "main",

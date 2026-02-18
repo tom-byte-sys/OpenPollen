@@ -1,6 +1,6 @@
 # SKILL.md 格式规范
 
-SKILL.md 是 HiveAgent 技能的核心定义文件，采用 Agent Skills 开放标准格式。
+SKILL.md 是 OpenPollen 技能的核心定义文件，采用 Agent Skills 开放标准格式。
 
 ## 文件结构
 

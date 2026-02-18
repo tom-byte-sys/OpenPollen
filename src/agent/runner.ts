@@ -346,10 +346,10 @@ export class AgentRunner {
   /**
    * 创建专用 SDK 工作空间目录
    * 避免使用项目根目录作为 cwd（会加载 CLAUDE.md 导致 cache_control 块过多）
-   * 结构：~/.hiveagent/sdk-workspace/.claude/skills/ -> 实际技能目录
+   * 结构：~/.openpollen/sdk-workspace/.claude/skills/ -> 实际技能目录
    */
   private async ensureSDKWorkspace(skillsDir: string): Promise<string> {
-    const workspaceDir = resolve(process.env.HOME ?? '/tmp', '.hiveagent', 'sdk-workspace');
+    const workspaceDir = resolve(process.env.HOME ?? '/tmp', '.openpollen', 'sdk-workspace');
     const dotClaudeDir = join(workspaceDir, '.claude');
     const dotClaudeSkillsDir = join(dotClaudeDir, 'skills');
 

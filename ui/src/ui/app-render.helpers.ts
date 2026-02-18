@@ -6,7 +6,7 @@ import type { ThemeMode } from "./theme.ts";
 import type { SessionsListResult } from "./types.ts";
 import { refreshChat } from "./app-chat.ts";
 import { syncUrlWithSessionKey } from "./app-settings.ts";
-import { HiveAgentApp } from "./app.ts";
+import { OpenPollenApp } from "./app.ts";
 import { ChatState, loadChatHistory } from "./controllers/chat.ts";
 import { t, getLocale, setLocale } from "./i18n/index.ts";
 import type { TranslationKey } from "./i18n/types.ts";
@@ -57,10 +57,10 @@ function resetChatStateForSessionSwitch(state: AppViewState, sessionKey: string)
   state.sessionKey = sessionKey;
   state.chatMessage = "";
   state.chatStream = null;
-  (state as unknown as HiveAgentApp).chatStreamStartedAt = null;
+  (state as unknown as OpenPollenApp).chatStreamStartedAt = null;
   state.chatRunId = null;
-  (state as unknown as HiveAgentApp).resetToolStream();
-  (state as unknown as HiveAgentApp).resetChatScroll();
+  (state as unknown as OpenPollenApp).resetToolStream();
+  (state as unknown as OpenPollenApp).resetChatScroll();
   state.applySettings({
     ...state.settings,
     sessionKey,
@@ -159,10 +159,10 @@ export function renderChatControls(state: AppViewState) {
             state.sessionKey = next;
             state.chatMessage = "";
             state.chatStream = null;
-            (state as unknown as HiveAgentApp).chatStreamStartedAt = null;
+            (state as unknown as OpenPollenApp).chatStreamStartedAt = null;
             state.chatRunId = null;
-            (state as unknown as HiveAgentApp).resetToolStream();
-            (state as unknown as HiveAgentApp).resetChatScroll();
+            (state as unknown as OpenPollenApp).resetToolStream();
+            (state as unknown as OpenPollenApp).resetChatScroll();
             state.applySettings({
               ...state.settings,
               sessionKey: next,
@@ -191,7 +191,7 @@ export function renderChatControls(state: AppViewState) {
         class="btn btn--sm btn--icon"
         ?disabled=${state.chatLoading || !state.connected}
         @click=${async () => {
-          const app = state as unknown as HiveAgentApp;
+          const app = state as unknown as OpenPollenApp;
           app.chatManualRefreshInFlight = true;
           app.chatNewMessagesBelow = false;
           await app.updateComplete;
@@ -468,7 +468,7 @@ export function renderThemeToggle(state: AppViewState) {
 export function renderLocaleToggle(state: AppViewState) {
   const locale = getLocale();
   const apply = (next: "en" | "zh") => () => {
-    const app = state as unknown as HiveAgentApp;
+    const app = state as unknown as OpenPollenApp;
     app.setAppLocale(next);
   };
   return html`

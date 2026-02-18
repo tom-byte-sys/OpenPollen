@@ -1,6 +1,6 @@
 # SKILL.md Format
 
-SKILL.md is the core definition file for HiveAgent skills, following the Agent Skills open standard format.
+SKILL.md is the core definition file for OpenPollen skills, following the Agent Skills open standard format.
 
 ## File Structure
 

@@ -20,7 +20,7 @@
 ui/
 ├── vite.config.ts                    # Vite 构建配置
 ├── src/ui/
-│   ├── app.ts                        # 根组件 HiveAgentApp (LitElement)
+│   ├── app.ts                        # 根组件 OpenPollenApp (LitElement)
 │   ├── app-render.ts                 # 主渲染调度器
 │   ├── app-view-state.ts             # 完整状态类型定义
 │   ├── app-gateway.ts                # WebSocket 连接管理
@@ -86,7 +86,7 @@ ui/
 ### 单根组件 + 函数式视图
 
 ```
-HiveAgentApp (@customElement)
+OpenPollenApp (@customElement)
   │
   ├── @state() 属性 (100+ 个响应式状态)
   │
@@ -98,7 +98,7 @@ HiveAgentApp (@customElement)
         └── ...其他视图
 ```
 
-- **根组件** `HiveAgentApp` 是唯一的 LitElement 子类，持有全部状态
+- **根组件** `OpenPollenApp` 是唯一的 LitElement 子类，持有全部状态
 - **视图函数** 是纯函数（非组件），接收 props 返回 `html` 模板
 - 任何 `@state()` 属性变化 → Lit 自动触发 `render()` → 整棵视图树更新
 
@@ -123,7 +123,7 @@ Gateway 事件 → onEvent() handler ─┘
 // ... 100+ 更多
 ```
 
-状态持久化通过 `storage.ts` 写入 localStorage（key: `hiveagent.control.settings.v1`），包括 gateway URL、token、主题、语言、分栏比例等。
+状态持久化通过 `storage.ts` 写入 localStorage（key: `openpollen.control.settings.v1`），包括 gateway URL、token、主题、语言、分栏比例等。
 
 ## Gateway 通信
 

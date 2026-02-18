@@ -3,7 +3,7 @@ import { writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { loadConfig, expandHome } from '../../src/config/loader.js';
 
-const TEST_DIR = resolve('/tmp/hiveagent-test-config');
+const TEST_DIR = resolve('/tmp/openpollen-test-config');
 
 describe('Config Loader', () => {
   beforeEach(() => {
@@ -17,11 +17,11 @@ describe('Config Loader', () => {
 
   it('should load default config when no file exists', () => {
     // Should throw because explicit path doesn't exist
-    expect(() => loadConfig('/nonexistent/path/hiveagent.json')).toThrow('配置文件不存在');
+    expect(() => loadConfig('/nonexistent/path/openpollen.json')).toThrow('配置文件不存在');
   });
 
   it('should load and parse JSON5 config', () => {
-    const configPath = resolve(TEST_DIR, 'hiveagent.json');
+    const configPath = resolve(TEST_DIR, 'openpollen.json');
     writeFileSync(configPath, JSON.stringify({
       agent: {
         model: 'claude-haiku-4-20250514',
@@ -51,14 +51,14 @@ describe('Config Loader', () => {
   });
 
   it('should substitute environment variables', () => {
-    process.env['TEST_HIVEAGENT_KEY'] = 'test-key-123';
+    process.env['TEST_OPENPOLLEN_KEY'] = 'test-key-123';
 
-    const configPath = resolve(TEST_DIR, 'hiveagent.json');
+    const configPath = resolve(TEST_DIR, 'openpollen.json');
     writeFileSync(configPath, JSON.stringify({
       agent: { model: 'claude-sonnet-4-20250514', maxTurns: 15, maxBudgetUsd: 1.0, defaultTools: [], defaultSkills: [] },
       gateway: { host: '127.0.0.1', port: 18800, auth: { mode: 'none' }, session: { timeoutMinutes: 30, maxConcurrent: 50 } },
       channels: {},
-      providers: { anthropic: { enabled: true, apiKey: '${TEST_HIVEAGENT_KEY}' } },
+      providers: { anthropic: { enabled: true, apiKey: '${TEST_OPENPOLLEN_KEY}' } },
       skills: { directory: '/tmp/skills', enabled: [] },
       memory: { backend: 'sqlite', sqlitePath: '/tmp/test.db', fileDirectory: '/tmp/memory' },
       logging: { level: 'info' },
@@ -67,7 +67,7 @@ describe('Config Loader', () => {
     const config = loadConfig(configPath);
     expect(config.providers.anthropic?.apiKey).toBe('test-key-123');
 
-    delete process.env['TEST_HIVEAGENT_KEY'];
+    delete process.env['TEST_OPENPOLLEN_KEY'];
   });
 
   it('should expand ~ in paths', () => {

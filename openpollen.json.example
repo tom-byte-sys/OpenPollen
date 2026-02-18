@@ -1,6 +1,6 @@
 {
-  // HiveAgent 配置文件 (JSON5 格式)
-  // 复制为 hiveagent.json 并根据需要修改
+  // OpenPollen 配置文件 (JSON5 格式)
+  // 复制为 openpollen.json 并根据需要修改
 
   "agent": {
     "model": "claude-sonnet-4-20250514",
@@ -36,7 +36,7 @@
     "webchat": {
       "enabled": true,
       "port": 3001,
-      "assistantName": "HiveAgent"
+      "assistantName": "OpenPollen"
     },
     "wechat": {
       "enabled": false,
@@ -71,19 +71,19 @@
   },
 
   "skills": {
-    "directory": "~/.hiveagent/skills",
+    "directory": "~/.openpollen/skills",
     "enabled": []
   },
 
   "memory": {
     "backend": "sqlite",
-    "sqlitePath": "~/.hiveagent/memory.db",
-    "fileDirectory": "~/.hiveagent/memory"
+    "sqlitePath": "~/.openpollen/memory.db",
+    "fileDirectory": "~/.openpollen/memory"
   },
 
   "logging": {
     "level": "info",
-    "file": "~/.hiveagent/logs/hiveagent.log"
+    "file": "~/.openpollen/logs/openpollen.log"
   },
 
   "marketplace": {

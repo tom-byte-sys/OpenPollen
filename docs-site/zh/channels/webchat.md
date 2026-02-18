@@ -1,10 +1,10 @@
 # WebChat 网页聊天
 
-WebChat 是 HiveAgent 内置的网页聊天渠道，提供即时对话界面，支持流式响应。
+WebChat 是 OpenPollen 内置的网页聊天渠道，提供即时对话界面，支持流式响应。
 
 ## 配置
 
-在 `hiveagent.json` 中启用 WebChat：
+在 `openpollen.json` 中启用 WebChat：
 
 ```json5
 {
@@ -12,7 +12,7 @@ WebChat 是 HiveAgent 内置的网页聊天渠道，提供即时对话界面，�
     "webchat": {
       "enabled": true,
       "port": 3001,
-      "assistantName": "HiveAgent"
+      "assistantName": "OpenPollen"
     }
   }
 }
@@ -22,7 +22,7 @@ WebChat 是 HiveAgent 内置的网页聊天渠道，提供即时对话界面，�
 |------|------|--------|------|
 | `enabled` | boolean | `true` | 是否启用 |
 | `port` | number | `3001` | HTTP + WebSocket 服务端口 |
-| `assistantName` | string | `HiveAgent` | 界面显示的助手名称 |
+| `assistantName` | string | `OpenPollen` | 界面显示的助手名称 |
 
 ## 架构
 
@@ -42,7 +42,7 @@ WebChat 基于 WebSocket 实现双向通信：
 
 ### WebSocket 协议
 
-HiveAgent WebChat 使用自定义 RPC 协议（v3），包含三种帧类型：
+OpenPollen WebChat 使用自定义 RPC 协议（v3），包含三种帧类型：
 
 **请求帧（Request）**
 ```json

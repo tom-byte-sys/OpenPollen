@@ -72,7 +72,7 @@ describe("subtitleForTab", () => {
 
   it("returns descriptive subtitles", () => {
     expect(subtitleForTab("chat")).toContain("chat session");
-    expect(subtitleForTab("config")).toContain("hiveagent.json");
+    expect(subtitleForTab("config")).toContain("openpollen.json");
   });
 });
 
@@ -94,7 +94,7 @@ describe("normalizeBasePath", () => {
   });
 
   it("handles nested paths", () => {
-    expect(normalizeBasePath("/apps/hiveagent")).toBe("/apps/hiveagent");
+    expect(normalizeBasePath("/apps/openpollen")).toBe("/apps/openpollen");
   });
 });
 
@@ -121,7 +121,7 @@ describe("pathForTab", () => {
 
   it("prepends base path", () => {
     expect(pathForTab("chat", "/ui")).toBe("/ui/chat");
-    expect(pathForTab("sessions", "/apps/hiveagent")).toBe("/apps/hiveagent/sessions");
+    expect(pathForTab("sessions", "/apps/openpollen")).toBe("/apps/openpollen/sessions");
   });
 });
 
@@ -138,7 +138,7 @@ describe("tabFromPath", () => {
 
   it("handles base paths", () => {
     expect(tabFromPath("/ui/chat", "/ui")).toBe("chat");
-    expect(tabFromPath("/apps/hiveagent/sessions", "/apps/hiveagent")).toBe("sessions");
+    expect(tabFromPath("/apps/openpollen/sessions", "/apps/openpollen")).toBe("sessions");
   });
 
   it("returns null for unknown path", () => {
@@ -163,7 +163,7 @@ describe("inferBasePathFromPathname", () => {
 
   it("infers base path from nested paths", () => {
     expect(inferBasePathFromPathname("/ui/chat")).toBe("/ui");
-    expect(inferBasePathFromPathname("/apps/hiveagent/sessions")).toBe("/apps/hiveagent");
+    expect(inferBasePathFromPathname("/apps/openpollen/sessions")).toBe("/apps/openpollen");
   });
 
   it("handles index.html suffix", () => {

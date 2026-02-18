@@ -1,6 +1,6 @@
 # 配置参考
 
-HiveAgent 使用 JSON5 格式的配置文件，支持注释和尾逗号。配置文件位于 `~/.hiveagent/hiveagent.json`，也可以在项目根目录放置 `hiveagent.json`。
+OpenPollen 使用 JSON5 格式的配置文件，支持注释和尾逗号。配置文件位于 `~/.openpollen/openpollen.json`，也可以在项目根目录放置 `openpollen.json`。
 
 环境变量使用 `${VAR_NAME}` 语法在配置文件中引用。
 
@@ -57,7 +57,7 @@ Gateway HTTP 服务配置。
 |------|------|--------|------|
 | `enabled` | boolean | `true` | 是否启用 |
 | `port` | number | `3001` | WebChat 服务端口 |
-| `assistantName` | string | `HiveAgent` | 聊天界面显示的助手名称 |
+| `assistantName` | string | `OpenPollen` | 聊天界面显示的助手名称 |
 
 ### channels.dingtalk
 
@@ -133,7 +133,7 @@ OpenAI 兼容 API。
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `directory` | string | `~/.hiveagent/skills` | 技能存储目录 |
+| `directory` | string | `~/.openpollen/skills` | 技能存储目录 |
 | `enabled` | string[] | `[]` | 启用的技能白名单（空 = 全部启用） |
 
 ## memory
@@ -143,8 +143,8 @@ OpenAI 兼容 API。
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `backend` | string | `sqlite` | 存储后端：`sqlite` / `file` |
-| `sqlitePath` | string | `~/.hiveagent/memory.db` | SQLite 数据库路径 |
-| `fileDirectory` | string | `~/.hiveagent/memory` | Markdown 文件存储目录 |
+| `sqlitePath` | string | `~/.openpollen/memory.db` | SQLite 数据库路径 |
+| `fileDirectory` | string | `~/.openpollen/memory` | Markdown 文件存储目录 |
 
 ## logging
 
@@ -153,7 +153,7 @@ OpenAI 兼容 API。
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `level` | string | `info` | 日志级别：`trace` / `debug` / `info` / `warn` / `error` / `fatal` |
-| `file` | string | — | 日志文件路径（如 `~/.hiveagent/logs/hiveagent.log`） |
+| `file` | string | — | 日志文件路径（如 `~/.openpollen/logs/openpollen.log`） |
 
 ## marketplace
 
@@ -196,8 +196,8 @@ OpenAI 兼容 API。
       "apiKey": "${ANTHROPIC_API_KEY}"
     }
   },
-  "skills": { "directory": "~/.hiveagent/skills", "enabled": [] },
-  "memory": { "backend": "sqlite", "sqlitePath": "~/.hiveagent/memory.db" },
-  "logging": { "level": "info", "file": "~/.hiveagent/logs/hiveagent.log" }
+  "skills": { "directory": "~/.openpollen/skills", "enabled": [] },
+  "memory": { "backend": "sqlite", "sqlitePath": "~/.openpollen/memory.db" },
+  "logging": { "level": "info", "file": "~/.openpollen/logs/openpollen.log" }
 }
 ```

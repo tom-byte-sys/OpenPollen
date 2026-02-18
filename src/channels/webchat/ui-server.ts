@@ -32,8 +32,8 @@ export interface UiServerConfig {
 
 /**
  * Creates an HTTP server that:
- * 1. Serves static files from the HiveAgent UI build directory
- * 2. Returns a bootstrap config at /__hiveagent/control-ui-config.json
+ * 1. Serves static files from the OpenPollen UI build directory
+ * 2. Returns a bootstrap config at /__openpollen/control-ui-config.json
  * 3. Delegates WebSocket upgrades to the caller
  *
  * Returns the http.Server (caller wires up WSS upgrade).
@@ -45,10 +45,10 @@ export function createUiHttpServer(config: UiServerConfig): Server {
     const url = req.url ?? '/';
 
     // Bootstrap config endpoint
-    if (url === '/__hiveagent/control-ui-config.json') {
+    if (url === '/__openpollen/control-ui-config.json') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
-        assistantName: assistantName ?? 'HiveAgent',
+        assistantName: assistantName ?? 'OpenPollen',
         features: {},
       }));
       return;

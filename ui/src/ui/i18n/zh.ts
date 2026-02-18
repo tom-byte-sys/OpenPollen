@@ -72,12 +72,12 @@ export const zh: Translations = {
   'nav.sub.skills': '管理技能可用性和 API 密钥注入。',
   'nav.sub.nodes': '已配对设备、能力和命令暴露。',
   'nav.sub.chat': '直连网关的聊天会话，用于快速操作。',
-  'nav.sub.config': '安全编辑 ~/.hiveagent/hiveagent.json。',
+  'nav.sub.config': '安全编辑 ~/.openpollen/openpollen.json。',
   'nav.sub.debug': '网关快照、事件和手动 RPC 调用。',
   'nav.sub.logs': '实时查看网关日志文件。',
 
   // ── topbar ──────────────────────────────────────
-  'topbar.brand': 'HIVEAGENT',
+  'topbar.brand': 'OPENPOLLEN',
   'topbar.brandSub': '网关控制台',
   'topbar.health': '健康',
   'topbar.expandSidebar': '展开侧栏',
@@ -438,7 +438,7 @@ export const zh: Translations = {
 
   // ── config ──────────────────────────────────────
   'config.title': '配置',
-  'config.subtitle': '安全编辑 ~/.hiveagent/hiveagent.json。',
+  'config.subtitle': '安全编辑 ~/.openpollen/openpollen.json。',
   'config.loading': '加载中…',
   'config.formMode': '表单',
   'config.rawMode': '原始 JSON',

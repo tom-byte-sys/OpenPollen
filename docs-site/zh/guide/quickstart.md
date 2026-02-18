@@ -1,6 +1,6 @@
 # 快速开始
 
-本指南帮助你在本地快速启动 HiveAgent 并通过 WebChat 进行对话。
+本指南帮助你在本地快速启动 OpenPollen 并通过 WebChat 进行对话。
 
 ## 前置条件
 
@@ -13,7 +13,7 @@
 ```bash
 # 克隆仓库
 git clone https://github.com/anthropics/claude-code.git
-cd HiveAgent
+cd OpenPollen
 
 # 安装依赖
 npm install
@@ -27,7 +27,7 @@ npm run build
 运行交互式初始化命令：
 
 ```bash
-npx hiveagent init
+npx openpollen init
 ```
 
 初始化向导会引导你完成以下配置：
@@ -45,18 +45,18 @@ npx hiveagent init
    - code-review（代码审查）
    - data-analyst（数据分析）
 
-配置文件保存在 `~/.hiveagent/hiveagent.json`。
+配置文件保存在 `~/.openpollen/openpollen.json`。
 
 ## 启动服务
 
 ```bash
-npx hiveagent start
+npx openpollen start
 ```
 
 启动成功后你会看到：
 
 ```
-  HiveAgent v0.1.0 已启动
+  OpenPollen v0.1.0 已启动
   Gateway: http://127.0.0.1:18800
   Web Chat: http://localhost:3001
 ```
@@ -79,17 +79,17 @@ npx hiveagent start
 ## 查看状态
 
 ```bash
-npx hiveagent status
+npx openpollen status
 ```
 
 ## 停止服务
 
 ```bash
-npx hiveagent stop
+npx openpollen stop
 ```
 
 ## 下一步
 
-- [架构概览](/zh/guide/architecture) — 了解 HiveAgent 内部工作原理
+- [架构概览](/zh/guide/architecture) — 了解 OpenPollen 内部工作原理
 - [配置参考](/zh/reference/config) — 完整配置字段说明
 - [技能概览](/zh/skills/overview) — 安装和管理 Agent 技能

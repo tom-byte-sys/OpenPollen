@@ -5,7 +5,7 @@ import { SqliteMemoryStore } from '../../src/memory/sqlite-store.js';
 import { FileMemoryStore } from '../../src/memory/file-store.js';
 import type { MemoryStore } from '../../src/memory/interface.js';
 
-const TEST_DIR = resolve('/tmp/hiveagent-test-memory');
+const TEST_DIR = resolve('/tmp/openpollen-test-memory');
 
 interface StoreFactory {
   name: string;

@@ -33,7 +33,7 @@ function createMockConfig(): AppConfig {
         baseUrl: 'https://api.anthropic.com',
       },
     },
-    skills: { directory: '/tmp/hiveagent-test-skills', enabled: [] },
+    skills: { directory: '/tmp/openpollen-test-skills', enabled: [] },
     memory: { backend: 'sqlite' as const, sqlitePath: '/tmp/test.db', fileDirectory: '/tmp/memory' },
     logging: { level: 'info' as const },
   };

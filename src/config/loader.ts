@@ -39,7 +39,7 @@ export function expandHome(filepath: string): string {
 
 /**
  * 查找配置文件路径
- * 优先级：命令行参数 > 当前目录 > ~/.hiveagent/
+ * 优先级：命令行参数 > 当前目录 > ~/.openpollen/
  */
 function findConfigFile(explicitPath?: string): string | null {
   if (explicitPath) {
@@ -49,8 +49,8 @@ function findConfigFile(explicitPath?: string): string | null {
   }
 
   const candidates = [
-    resolve(process.cwd(), 'hiveagent.json'),
-    resolve(homedir(), '.hiveagent', 'hiveagent.json'),
+    resolve(process.cwd(), 'openpollen.json'),
+    resolve(homedir(), '.openpollen', 'openpollen.json'),
   ];
 
   for (const candidate of candidates) {
@@ -166,5 +166,5 @@ export function resolveConfigPath(explicitPath?: string): string | null {
 export function getConfigDir(explicitPath?: string): string {
   const configPath = findConfigFile(explicitPath);
   if (configPath) return dirname(configPath);
-  return resolve(homedir(), '.hiveagent');
+  return resolve(homedir(), '.openpollen');
 }

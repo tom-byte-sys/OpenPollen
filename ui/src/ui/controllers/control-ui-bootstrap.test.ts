@@ -9,7 +9,7 @@ describe("loadControlUiBootstrapConfig", () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        basePath: "/hiveagent",
+        basePath: "/openpollen",
         assistantName: "Ops",
         assistantAvatar: "O",
         assistantAgentId: "main",
@@ -18,7 +18,7 @@ describe("loadControlUiBootstrapConfig", () => {
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
 
     const state = {
-      basePath: "/hiveagent",
+      basePath: "/openpollen",
       assistantName: "Assistant",
       assistantAvatar: null,
       assistantAgentId: null,
@@ -27,7 +27,7 @@ describe("loadControlUiBootstrapConfig", () => {
     await loadControlUiBootstrapConfig(state);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      `/hiveagent${CONTROL_UI_BOOTSTRAP_CONFIG_PATH}`,
+      `/openpollen${CONTROL_UI_BOOTSTRAP_CONFIG_PATH}`,
       expect.objectContaining({ method: "GET" }),
     );
     expect(state.assistantName).toBe("Ops");
@@ -64,7 +64,7 @@ describe("loadControlUiBootstrapConfig", () => {
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
 
     const state = {
-      basePath: "/hiveagent/",
+      basePath: "/openpollen/",
       assistantName: "Assistant",
       assistantAvatar: null,
       assistantAgentId: null,
@@ -73,7 +73,7 @@ describe("loadControlUiBootstrapConfig", () => {
     await loadControlUiBootstrapConfig(state);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      `/hiveagent${CONTROL_UI_BOOTSTRAP_CONFIG_PATH}`,
+      `/openpollen${CONTROL_UI_BOOTSTRAP_CONFIG_PATH}`,
       expect.objectContaining({ method: "GET" }),
     );
 

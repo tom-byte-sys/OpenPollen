@@ -1,6 +1,6 @@
 # Architecture
 
-HiveAgent uses a layered architecture that decouples message ingestion, routing, Agent execution, and storage.
+OpenPollen uses a layered architecture that decouples message ingestion, routing, Agent execution, and storage.
 
 ## Architecture Diagram
 

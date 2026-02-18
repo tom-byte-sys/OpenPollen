@@ -19,7 +19,7 @@ function normalizeBase(input: string): string {
 }
 
 export default defineConfig(() => {
-  const envBase = process.env.HIVEAGENT_CONTROL_UI_BASE_PATH?.trim();
+  const envBase = process.env.OPENPOLLEN_CONTROL_UI_BASE_PATH?.trim();
   const base = envBase ? normalizeBase(envBase) : "./";
   return {
     base,

@@ -1,6 +1,6 @@
 # DingTalk Integration
 
-HiveAgent supports DingTalk Bot via plugin, using Stream mode to connect to DingTalk servers without requiring a public IP.
+OpenPollen supports DingTalk Bot via plugin, using Stream mode to connect to DingTalk servers without requiring a public IP.
 
 ## Prerequisites
 
@@ -18,7 +18,7 @@ HiveAgent supports DingTalk Bot via plugin, using Stream mode to connect to Ding
 
 ## Configuration
 
-Configure DingTalk in `hiveagent.json`:
+Configure DingTalk in `openpollen.json`:
 
 ```json5
 {
@@ -51,10 +51,10 @@ Configure DingTalk in `hiveagent.json`:
 
 ## Usage
 
-After starting HiveAgent, the DingTalk Bot connects automatically via Stream mode:
+After starting OpenPollen, the DingTalk Bot connects automatically via Stream mode:
 
 ```bash
-hiveagent start
+openpollen start
 ```
 
 ### Direct Messages
@@ -84,10 +84,10 @@ Access Tokens are cached and auto-refreshed 5 minutes before expiry.
 
 ```bash
 # Check DingTalk channel status
-hiveagent channel list
+openpollen channel list
 
 # Send test message via Gateway API
-hiveagent channel test dingtalk
+openpollen channel test dingtalk
 ```
 
 ## FAQ
@@ -102,4 +102,4 @@ Verify `clientId` and `clientSecret` are correct, and the app's message receivin
 
 ### Replies truncated
 
-DingTalk has message length limits. HiveAgent auto-truncates replies exceeding 18,000 characters with a truncation notice.
+DingTalk has message length limits. OpenPollen auto-truncates replies exceeding 18,000 characters with a truncation notice.

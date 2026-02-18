@@ -7,12 +7,12 @@ import type { AppConfig } from '../../../config/schema.js';
  * Currently single-agent; uses fixed ID "default".
  */
 export function handleAgentsList(reqId: string, appConfig: AppConfig): ResponseFrame {
-  const name = appConfig.channels.webchat?.assistantName ?? 'HiveAgent';
+  const name = appConfig.channels.webchat?.assistantName ?? 'OpenPollen';
 
   return okResponse(reqId, {
     defaultId: 'default',
     mainKey: 'default',
-    scope: 'hiveagent',
+    scope: 'openpollen',
     agents: [
       {
         id: 'default',
@@ -58,7 +58,7 @@ export function handleAgentIdentityGet(
   params: { agentId?: string },
   appConfig: AppConfig,
 ): ResponseFrame {
-  const name = appConfig.channels.webchat?.assistantName ?? 'HiveAgent';
+  const name = appConfig.channels.webchat?.assistantName ?? 'OpenPollen';
 
   return okResponse(reqId, {
     agentId: params.agentId ?? 'default',

@@ -1,8 +1,8 @@
 # Introduction
 
-HiveAgent is a secure, easy-to-use, China-ready AI Agent platform built on the [Claude Agent SDK](https://docs.anthropic.com/en/docs/agents).
+OpenPollen is a secure, easy-to-use, China-ready AI Agent platform built on the [Claude Agent SDK](https://docs.anthropic.com/en/docs/agents).
 
-## Why HiveAgent?
+## Why OpenPollen?
 
 - **Plug and play**: One command to initialize, auto-configured WebChat interface
 - **Unified channels**: Same Agent serves WebChat, DingTalk, WeCom simultaneously
@@ -14,11 +14,11 @@ HiveAgent is a secure, easy-to-use, China-ready AI Agent platform built on the [
 
 ### Gateway
 
-The Gateway is HiveAgent's core service, providing HTTP API and message routing. All messages (regardless of channel) are routed through the Gateway to the Agent.
+The Gateway is OpenPollen's core service, providing HTTP API and message routing. All messages (regardless of channel) are routed through the Gateway to the Agent.
 
 ### Channel
 
-Channels bridge users and the Agent. HiveAgent ships with a built-in WebChat channel and supports DingTalk, WeCom via plugins.
+Channels bridge users and the Agent. OpenPollen ships with a built-in WebChat channel and supports DingTalk, WeCom via plugins.
 
 ### Skill
 
@@ -26,7 +26,7 @@ Skills define the Agent's capabilities. Each skill is a directory containing a `
 
 ### Plugin
 
-Plugins extend HiveAgent through 4 slot types:
+Plugins extend OpenPollen through 4 slot types:
 - **channel**: Chat platform adapters (e.g., DingTalk)
 - **skill**: Agent skill packages
 - **provider**: Model providers

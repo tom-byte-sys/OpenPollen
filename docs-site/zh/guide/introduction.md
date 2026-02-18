@@ -1,8 +1,8 @@
 # 介绍
 
-HiveAgent 是一个安全、易用、国产化的 AI Agent 平台，基于 [Claude Agent SDK](https://docs.anthropic.com/en/docs/agents) 构建。
+OpenPollen 是一个安全、易用、国产化的 AI Agent 平台，基于 [Claude Agent SDK](https://docs.anthropic.com/en/docs/agents) 构建。
 
-## 为什么选择 HiveAgent？
+## 为什么选择 OpenPollen？
 
 - **即插即用**：一条命令完成初始化，自动配置 WebChat 网页聊天界面
 - **多渠道统一**：同一个 Agent 可同时接入 WebChat、钉钉、企业微信等多个聊天平台
@@ -14,11 +14,11 @@ HiveAgent 是一个安全、易用、国产化的 AI Agent 平台，基于 [Clau
 
 ### Gateway
 
-Gateway 是 HiveAgent 的核心服务，提供 HTTP API 和消息路由。所有消息（无论来自哪个渠道）都通过 Gateway 路由到 Agent 处理。
+Gateway 是 OpenPollen 的核心服务，提供 HTTP API 和消息路由。所有消息（无论来自哪个渠道）都通过 Gateway 路由到 Agent 处理。
 
 ### Channel（渠道）
 
-渠道是连接用户和 Agent 的桥梁。HiveAgent 内置 WebChat 渠道，通过插件支持钉钉、企业微信等平台。
+渠道是连接用户和 Agent 的桥梁。OpenPollen 内置 WebChat 渠道，通过插件支持钉钉、企业微信等平台。
 
 ### Skill（技能）
 
@@ -26,7 +26,7 @@ Gateway 是 HiveAgent 的核心服务，提供 HTTP API 和消息路由。所有
 
 ### Plugin（插件）
 
-插件是 HiveAgent 的扩展机制，支持 4 种槽位：
+插件是 OpenPollen 的扩展机制，支持 4 种槽位：
 - **channel**：聊天平台适配器（如钉钉）
 - **skill**：Agent 技能包
 - **provider**：模型提供商

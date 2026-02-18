@@ -1,6 +1,6 @@
 # 本地开发
 
-本指南介绍如何搭建 HiveAgent 本地开发环境。
+本指南介绍如何搭建 OpenPollen 本地开发环境。
 
 ## 环境要求
 
@@ -14,7 +14,7 @@
 
 ```bash
 git clone https://github.com/anthropics/claude-code.git
-cd HiveAgent
+cd OpenPollen
 ```
 
 ## 安装依赖
@@ -28,10 +28,10 @@ npm install
 复制示例配置文件：
 
 ```bash
-cp hiveagent.json.example hiveagent.json
+cp openpollen.json.example openpollen.json
 ```
 
-编辑 `hiveagent.json`，至少配置一个模型提供商：
+编辑 `openpollen.json`，至少配置一个模型提供商：
 
 ```json5
 {
@@ -83,7 +83,7 @@ npm run typecheck
 ## 目录结构
 
 ```
-HiveAgent/
+OpenPollen/
 ├── src/
 │   ├── index.ts          # 入口，创建并组装所有模块
 │   ├── config/           # 配置加载和 schema 验证
@@ -118,18 +118,18 @@ HiveAgent/
 
 ## 数据目录
 
-运行时数据存储在 `~/.hiveagent/`：
+运行时数据存储在 `~/.openpollen/`：
 
 ```
-~/.hiveagent/
-├── hiveagent.json        # 配置文件
+~/.openpollen/
+├── openpollen.json        # 配置文件
 ├── auth.json             # 登录凭证
-├── hiveagent.pid         # 进程 PID 文件
+├── openpollen.pid         # 进程 PID 文件
 ├── memory.db             # SQLite 记忆数据库
 ├── memory/               # Markdown 记忆文件
 ├── skills/               # 已安装技能
 └── logs/
-    └── hiveagent.log     # 日志文件
+    └── openpollen.log     # 日志文件
 ```
 
 ## 常见问题
@@ -158,11 +158,11 @@ HiveAgent/
 
 ```bash
 # 查看最近 50 行日志
-npx hiveagent logs
+npx openpollen logs
 
 # 持续跟踪
-npx hiveagent logs -f
+npx openpollen logs -f
 
 # 只看错误
-npx hiveagent logs -l error
+npx openpollen logs -l error
 ```

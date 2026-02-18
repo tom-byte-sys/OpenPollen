@@ -1,17 +1,17 @@
 # CLI Commands
 
-HiveAgent provides the `hiveagent` CLI tool for managing services, configuration, skills, and channels.
+OpenPollen provides the `openpollen` CLI tool for managing services, configuration, skills, and channels.
 
 ## Global Options
 
 Most subcommands support `-c, --config <path>` to specify the configuration file path.
 
-## hiveagent start
+## openpollen start
 
-Start the HiveAgent Gateway service.
+Start the OpenPollen Gateway service.
 
 ```bash
-hiveagent start [options]
+openpollen start [options]
 ```
 
 | Option | Description |
@@ -19,54 +19,54 @@ hiveagent start [options]
 | `-c, --config <path>` | Configuration file path |
 | `-d, --daemon` | Run in background |
 
-## hiveagent stop
+## openpollen stop
 
-Stop the running HiveAgent.
+Stop the running OpenPollen.
 
 ```bash
-hiveagent stop
+openpollen stop
 ```
 
 Sends SIGTERM to the running process, waits up to 5 seconds.
 
-## hiveagent init
+## openpollen init
 
 Interactive configuration initialization.
 
 ```bash
-hiveagent init
+openpollen init
 ```
 
 Guides you through:
 1. Choose model provider (Beelive / Anthropic / Ollama)
 2. Configure chat platforms (DingTalk / WebChat)
 3. Install built-in skills
-4. Generate config file at `~/.hiveagent/hiveagent.json`
+4. Generate config file at `~/.openpollen/openpollen.json`
 
-## hiveagent status
+## openpollen status
 
 Check runtime status.
 
 ```bash
-hiveagent status [-c, --config <path>]
+openpollen status [-c, --config <path>]
 ```
 
-## hiveagent login
+## openpollen login
 
-Login to the HiveAgent marketplace.
+Login to the OpenPollen marketplace.
 
 ```bash
-hiveagent login
+openpollen login
 ```
 
-Token is saved to `~/.hiveagent/auth.json`.
+Token is saved to `~/.openpollen/auth.json`.
 
-## hiveagent logs
+## openpollen logs
 
 View logs.
 
 ```bash
-hiveagent logs [options]
+openpollen logs [options]
 ```
 
 | Option | Description |
@@ -75,15 +75,15 @@ hiveagent logs [options]
 | `-n, --lines <n>` | Show last N lines (default 50) |
 | `-f, --follow` | Follow log output |
 
-## hiveagent config show
+## openpollen config show
 
 Display current configuration (secrets are masked).
 
 ```bash
-hiveagent config show [-c, --config <path>]
+openpollen config show [-c, --config <path>]
 ```
 
-## hiveagent skill
+## openpollen skill
 
 Skill management commands.
 
@@ -92,7 +92,7 @@ Skill management commands.
 List installed skills.
 
 ```bash
-hiveagent skill list [-c, --config <path>]
+openpollen skill list [-c, --config <path>]
 ```
 
 ### skill install
@@ -101,13 +101,13 @@ Install a skill from three sources:
 
 ```bash
 # From marketplace
-hiveagent skill install <name>
+openpollen skill install <name>
 
 # From Git repository
-hiveagent skill install https://github.com/user/skill-name.git
+openpollen skill install https://github.com/user/skill-name.git
 
 # From local directory
-hiveagent skill install ./my-skill
+openpollen skill install ./my-skill
 ```
 
 ### skill remove
@@ -115,7 +115,7 @@ hiveagent skill install ./my-skill
 Uninstall a skill.
 
 ```bash
-hiveagent skill remove <name>
+openpollen skill remove <name>
 ```
 
 ### skill create
@@ -123,7 +123,7 @@ hiveagent skill remove <name>
 Create a new skill scaffold.
 
 ```bash
-hiveagent skill create <name>
+openpollen skill create <name>
 ```
 
 ### skill update
@@ -131,7 +131,7 @@ hiveagent skill create <name>
 Update a skill (Git sources only).
 
 ```bash
-hiveagent skill update <name>
+openpollen skill update <name>
 ```
 
 ### skill search
@@ -139,7 +139,7 @@ hiveagent skill update <name>
 Search the official marketplace.
 
 ```bash
-hiveagent skill search <keyword> [options]
+openpollen skill search <keyword> [options]
 ```
 
 | Option | Description |
@@ -152,20 +152,20 @@ hiveagent skill search <keyword> [options]
 Publish a skill to the marketplace.
 
 ```bash
-hiveagent skill publish <name> [-c, --config <path>]
+openpollen skill publish <name> [-c, --config <path>]
 ```
 
-Requires `hiveagent login` first. Skills are reviewed before becoming visible.
+Requires `openpollen login` first. Skills are reviewed before becoming visible.
 
 ### skill earnings
 
 View developer skill earnings.
 
 ```bash
-hiveagent skill earnings [--month <month>]
+openpollen skill earnings [--month <month>]
 ```
 
-## hiveagent channel
+## openpollen channel
 
 Channel management commands.
 
@@ -174,7 +174,7 @@ Channel management commands.
 List configured platforms.
 
 ```bash
-hiveagent channel list [-c, --config <path>]
+openpollen channel list [-c, --config <path>]
 ```
 
 ### channel test
@@ -182,7 +182,7 @@ hiveagent channel list [-c, --config <path>]
 Send a test message to a platform.
 
 ```bash
-hiveagent channel test <name>
+openpollen channel test <name>
 ```
 
 Supported platforms: `webchat`, `dingtalk`.

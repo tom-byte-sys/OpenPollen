@@ -72,12 +72,12 @@ export const en: Translations = {
   'nav.sub.skills': 'Manage skill availability and API key injection.',
   'nav.sub.nodes': 'Paired devices, capabilities, and command exposure.',
   'nav.sub.chat': 'Direct gateway chat session for quick interventions.',
-  'nav.sub.config': 'Edit ~/.hiveagent/hiveagent.json safely.',
+  'nav.sub.config': 'Edit ~/.openpollen/openpollen.json safely.',
   'nav.sub.debug': 'Gateway snapshots, events, and manual RPC calls.',
   'nav.sub.logs': 'Live tail of the gateway file logs.',
 
   // ── topbar ──────────────────────────────────────
-  'topbar.brand': 'HIVEAGENT',
+  'topbar.brand': 'OPENPOLLEN',
   'topbar.brandSub': 'Gateway Dashboard',
   'topbar.health': 'Health',
   'topbar.expandSidebar': 'Expand sidebar',
@@ -438,7 +438,7 @@ export const en: Translations = {
 
   // ── config ──────────────────────────────────────
   'config.title': 'Config',
-  'config.subtitle': 'Edit ~/.hiveagent/hiveagent.json safely.',
+  'config.subtitle': 'Edit ~/.openpollen/openpollen.json safely.',
   'config.loading': 'Loading…',
   'config.formMode': 'Form',
   'config.rawMode': 'Raw JSON',

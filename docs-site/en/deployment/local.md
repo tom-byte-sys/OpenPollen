@@ -1,6 +1,6 @@
 # Local Development
 
-This guide covers setting up HiveAgent for local development.
+This guide covers setting up OpenPollen for local development.
 
 ## Requirements
 
@@ -14,7 +14,7 @@ This guide covers setting up HiveAgent for local development.
 
 ```bash
 git clone https://github.com/anthropics/claude-code.git
-cd HiveAgent
+cd OpenPollen
 ```
 
 ## Install Dependencies
@@ -28,10 +28,10 @@ npm install
 Copy the example config:
 
 ```bash
-cp hiveagent.json.example hiveagent.json
+cp openpollen.json.example openpollen.json
 ```
 
-Edit `hiveagent.json`, configure at least one model provider:
+Edit `openpollen.json`, configure at least one model provider:
 
 ```json5
 {
@@ -83,7 +83,7 @@ npm run typecheck
 ## Directory Structure
 
 ```
-HiveAgent/
+OpenPollen/
 ├── src/
 │   ├── index.ts          # Entry point, assembles all modules
 │   ├── config/           # Config loading and schema validation
@@ -118,18 +118,18 @@ HiveAgent/
 
 ## Data Directory
 
-Runtime data is stored in `~/.hiveagent/`:
+Runtime data is stored in `~/.openpollen/`:
 
 ```
-~/.hiveagent/
-├── hiveagent.json        # Configuration file
+~/.openpollen/
+├── openpollen.json        # Configuration file
 ├── auth.json             # Login credentials
-├── hiveagent.pid         # Process PID file
+├── openpollen.pid         # Process PID file
 ├── memory.db             # SQLite memory database
 ├── memory/               # Markdown memory files
 ├── skills/               # Installed skills
 └── logs/
-    └── hiveagent.log     # Log file
+    └── openpollen.log     # Log file
 ```
 
 ## FAQ
@@ -158,11 +158,11 @@ If you can't access Anthropic API directly from China, configure the Beelive pro
 
 ```bash
 # View last 50 lines
-npx hiveagent logs
+npx openpollen logs
 
 # Follow logs
-npx hiveagent logs -f
+npx openpollen logs -f
 
 # Errors only
-npx hiveagent logs -l error
+npx openpollen logs -l error
 ```

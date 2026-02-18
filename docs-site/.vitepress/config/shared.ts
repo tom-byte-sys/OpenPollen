@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitepress'
 
 export const shared = defineConfig({
-  title: 'HiveAgent',
+  title: 'OpenPollen',
   description: '安全、易用、国产化的 AI Agent 平台',
 
   base: '/docs/',

@@ -1,6 +1,6 @@
 # 钉钉接入
 
-HiveAgent 通过插件支持钉钉 Bot，使用 Stream 模式连接钉钉服务器，无需公网 IP。
+OpenPollen 通过插件支持钉钉 Bot，使用 Stream 模式连接钉钉服务器，无需公网 IP。
 
 ## 前置条件
 
@@ -18,7 +18,7 @@ HiveAgent 通过插件支持钉钉 Bot，使用 Stream 模式连接钉钉服务�
 
 ## 配置
 
-在 `hiveagent.json` 中配置钉钉：
+在 `openpollen.json` 中配置钉钉：
 
 ```json5
 {
@@ -51,14 +51,14 @@ HiveAgent 通过插件支持钉钉 Bot，使用 Stream 模式连接钉钉服务�
 
 ## 使用
 
-启动 HiveAgent 后，钉钉 Bot 会自动通过 Stream 模式连接：
+启动 OpenPollen 后，钉钉 Bot 会自动通过 Stream 模式连接：
 
 ```bash
-hiveagent start
+openpollen start
 ```
 
 ```
-  HiveAgent v0.1.0 已启动
+  OpenPollen v0.1.0 已启动
   Gateway: http://127.0.0.1:18800
   钉钉 Bot: 已连接 (Stream 模式)
 ```
@@ -90,10 +90,10 @@ Access Token 会自动缓存，过期前 5 分钟自动刷新。
 
 ```bash
 # 检查钉钉渠道状态
-hiveagent channel list
+openpollen channel list
 
 # 通过 Gateway API 发送测试消息
-hiveagent channel test dingtalk
+openpollen channel test dingtalk
 ```
 
 ## 常见问题
@@ -108,4 +108,4 @@ hiveagent channel test dingtalk
 
 ### 回复被截断
 
-钉钉消息有长度限制，HiveAgent 会自动截断超过 18000 字符的回复，并添加截断提示。
+钉钉消息有长度限制，OpenPollen 会自动截断超过 18000 字符的回复，并添加截断提示。

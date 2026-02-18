@@ -1,6 +1,6 @@
 # Quick Start
 
-This guide helps you quickly launch HiveAgent locally and chat via WebChat.
+This guide helps you quickly launch OpenPollen locally and chat via WebChat.
 
 ## Prerequisites
 
@@ -13,7 +13,7 @@ This guide helps you quickly launch HiveAgent locally and chat via WebChat.
 ```bash
 # Clone the repository
 git clone https://github.com/anthropics/claude-code.git
-cd HiveAgent
+cd OpenPollen
 
 # Install dependencies
 npm install
@@ -27,7 +27,7 @@ npm run build
 Run the interactive init command:
 
 ```bash
-npx hiveagent init
+npx openpollen init
 ```
 
 The wizard guides you through:
@@ -45,18 +45,18 @@ The wizard guides you through:
    - code-review
    - data-analyst
 
-Configuration is saved to `~/.hiveagent/hiveagent.json`.
+Configuration is saved to `~/.openpollen/openpollen.json`.
 
 ## Start the Service
 
 ```bash
-npx hiveagent start
+npx openpollen start
 ```
 
 On successful start:
 
 ```
-  HiveAgent v0.1.0 已启动
+  OpenPollen v0.1.0 已启动
   Gateway: http://127.0.0.1:18800
   Web Chat: http://localhost:3001
 ```
@@ -77,17 +77,17 @@ Open `http://localhost:3001` in your browser to chat with the Agent via WebChat.
 ## Check Status
 
 ```bash
-npx hiveagent status
+npx openpollen status
 ```
 
 ## Stop the Service
 
 ```bash
-npx hiveagent stop
+npx openpollen stop
 ```
 
 ## Next Steps
 
-- [Architecture](/en/guide/architecture) — Learn how HiveAgent works internally
+- [Architecture](/en/guide/architecture) — Learn how OpenPollen works internally
 - [Configuration](/en/reference/config) — Full configuration reference
 - [Skills Overview](/en/skills/overview) — Install and manage Agent skills

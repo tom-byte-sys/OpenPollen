@@ -1,5 +1,5 @@
 {
-  "name": "hiveagent-control-ui",
+  "name": "openpollen-control-ui",
   "private": true,
   "type": "module",
   "scripts": {

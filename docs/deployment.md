@@ -1,4 +1,4 @@
-# HiveAgent 安装与部署指南
+# OpenPollen 安装与部署指南
 
 ## 环境要求
 
@@ -11,13 +11,13 @@
 ## 方式一：npm 全局安装（推荐）
 
 ```bash
-npm install -g hiveagent
+npm install -g openpollen
 ```
 
 安装完成后验证：
 
 ```bash
-hiveagent --version
+openpollen --version
 # 输出: 0.1.0
 ```
 
@@ -27,8 +27,8 @@ hiveagent --version
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/gyp3085000/HiveAgent.git
-cd HiveAgent
+git clone https://github.com/gyp3085000/OpenPollen.git
+cd OpenPollen
 
 # 2. 安装依赖
 npm install
@@ -43,7 +43,7 @@ npm link
 验证：
 
 ```bash
-hiveagent --version
+openpollen --version
 # 输出: 0.1.0
 ```
 
@@ -52,7 +52,7 @@ hiveagent --version
 ## 初始化配置
 
 ```bash
-hiveagent init
+openpollen init
 ```
 
 交互式向导会依次引导你完成以下配置：
@@ -86,12 +86,12 @@ hiveagent init
 初始化完成后，配置文件保存在：
 
 ```
-~/.hiveagent/
-├── hiveagent.json      # 主配置文件
+~/.openpollen/
+├── openpollen.json      # 主配置文件
 ├── skills/             # 已安装的技能
 ├── memory.db           # SQLite 记忆数据库（运行后生成）
 └── logs/
-    └── hiveagent.log   # 运行日志
+    └── openpollen.log   # 运行日志
 ```
 
 ---
@@ -99,13 +99,13 @@ hiveagent init
 ## 启动服务
 
 ```bash
-hiveagent start
+openpollen start
 ```
 
 正常输出：
 
 ```
-  HiveAgent v0.1.0 已启动
+  OpenPollen v0.1.0 已启动
   Gateway: http://127.0.0.1:18800
   Web Chat: http://localhost:3001
 ```
@@ -128,7 +128,7 @@ curl -X POST http://127.0.0.1:18800/api/chat \
 
 ### 停止服务
 
-在运行 `hiveagent start` 的终端按 **Ctrl+C**。
+在运行 `openpollen start` 的终端按 **Ctrl+C**。
 
 ---
 
@@ -137,31 +137,31 @@ curl -X POST http://127.0.0.1:18800/api/chat \
 ### 服务管理
 
 ```bash
-hiveagent start              # 启动服务
-hiveagent start -c <path>    # 指定配置文件启动
-hiveagent status             # 查看运行状态
+openpollen start              # 启动服务
+openpollen start -c <path>    # 指定配置文件启动
+openpollen status             # 查看运行状态
 ```
 
 ### 技能管理
 
 ```bash
-hiveagent skill list                          # 列出已安装技能
-hiveagent skill install ./path/to/skill/      # 从本地路径安装
-hiveagent skill install https://github.com/user/skill.git  # 从 Git 安装
-hiveagent skill create my-skill               # 创建技能脚手架
-hiveagent skill remove <name>                 # 卸载技能
-hiveagent skill update <name>                 # 更新技能（仅 Git 来源）
+openpollen skill list                          # 列出已安装技能
+openpollen skill install ./path/to/skill/      # 从本地路径安装
+openpollen skill install https://github.com/user/skill.git  # 从 Git 安装
+openpollen skill create my-skill               # 创建技能脚手架
+openpollen skill remove <name>                 # 卸载技能
+openpollen skill update <name>                 # 更新技能（仅 Git 来源）
 ```
 
 ### 配置与日志
 
 ```bash
-hiveagent config show        # 查看当前配置（密钥脱敏）
-hiveagent channel list       # 查看已配置的聊天平台
-hiveagent logs               # 查看最近 50 条日志
-hiveagent logs -n 100        # 查看最近 100 条日志
-hiveagent logs -f            # 实时跟踪日志
-hiveagent logs -l error      # 只看错误日志
+openpollen config show        # 查看当前配置（密钥脱敏）
+openpollen channel list       # 查看已配置的聊天平台
+openpollen logs               # 查看最近 50 条日志
+openpollen logs -n 100        # 查看最近 100 条日志
+openpollen logs -f            # 实时跟踪日志
+openpollen logs -l error      # 只看错误日志
 ```
 
 ---
@@ -173,8 +173,8 @@ hiveagent logs -l error      # 只看错误日志
 ### 配置文件查找顺序
 
 1. 命令行参数 `-c <path>` 指定的路径
-2. 当前目录下的 `hiveagent.json`
-3. `~/.hiveagent/hiveagent.json`
+2. 当前目录下的 `openpollen.json`
+3. `~/.openpollen/openpollen.json`
 
 ### 核心配置项
 
@@ -221,20 +221,20 @@ hiveagent logs -l error      # 只看错误日志
     }
   },
   "skills": {
-    "directory": "~/.hiveagent/skills"
+    "directory": "~/.openpollen/skills"
   },
   "memory": {
     "backend": "sqlite",
-    "sqlitePath": "~/.hiveagent/memory.db"
+    "sqlitePath": "~/.openpollen/memory.db"
   },
   "logging": {
     "level": "info",
-    "file": "~/.hiveagent/logs/hiveagent.log"
+    "file": "~/.openpollen/logs/openpollen.log"
   }
 }
 ```
 
-完整配置示例参见项目中的 [hiveagent.json.example](../hiveagent.json.example)。
+完整配置示例参见项目中的 [openpollen.json.example](../openpollen.json.example)。
 
 ---
 
@@ -249,8 +249,8 @@ curl -fsSL https://ollama.ai/install.sh | sh
 # 2. 拉取推荐模型
 ollama pull qwen3-coder
 
-# 3. 初始化 HiveAgent 时选择 "本地模型 (Ollama)"
-hiveagent init
+# 3. 初始化 OpenPollen 时选择 "本地模型 (Ollama)"
+openpollen init
 ```
 
 ---
@@ -260,7 +260,7 @@ hiveagent init
 适合开发者调试使用，代码修改后自动重启：
 
 ```bash
-cd HiveAgent
+cd OpenPollen
 npm run dev
 ```
 
@@ -316,17 +316,17 @@ lsof -ti:3001 | xargs -r kill
 ### 配置文件未找到
 
 确认配置文件在以下位置之一：
-- 当前目录: `./hiveagent.json`
-- 用户目录: `~/.hiveagent/hiveagent.json`
+- 当前目录: `./openpollen.json`
+- 用户目录: `~/.openpollen/openpollen.json`
 
-或运行 `hiveagent init` 重新生成。
+或运行 `openpollen init` 重新生成。
 
 ### API 调用失败
 
 检查 provider 配置是否正确：
 
 ```bash
-hiveagent config show
+openpollen config show
 ```
 
 确认对应的 API Key 有效且 provider 的 `enabled` 为 `true`。
@@ -334,5 +334,5 @@ hiveagent config show
 ### 查看详细日志
 
 ```bash
-hiveagent logs -l debug -n 100
+openpollen logs -l debug -n 100
 ```
