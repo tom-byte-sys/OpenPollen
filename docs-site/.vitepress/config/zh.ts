@@ -2,7 +2,7 @@ import { type DefaultTheme, defineConfig } from 'vitepress'
 
 export const zh = defineConfig({
   lang: 'zh-CN',
-  description: '安全、易用、国产化的 AI Agent 平台',
+  description: '安全、易用、可扩展的开源 AI Agent 框架',
 
   themeConfig: {
     nav: nav(),

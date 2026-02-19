@@ -4,7 +4,7 @@ layout: home
 hero:
   name: OpenPollen
   text: AI Agent 平台
-  tagline: 安全、易用、国产化 —— 基于 Claude Agent SDK 构建
+  tagline: 安全、易用、可扩展 —— 基于 Claude Agent SDK 构建
   actions:
     - theme: brand
       text: 快速开始

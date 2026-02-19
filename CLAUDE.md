@@ -1,6 +1,6 @@
 # OpenPollen
 
-安全、易用、国产化的 AI Agent 平台。基于 Claude Agent SDK 构建，支持多平台聊天接入。
+安全、易用、可扩展的开源 AI Agent 框架。基于 Claude Agent SDK 构建，支持多平台聊天接入。
 
 ## 技术栈
 

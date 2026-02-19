@@ -1,13 +1,13 @@
 # 介绍
 
-OpenPollen 是一个安全、易用、国产化的 AI Agent 平台，基于 [Claude Agent SDK](https://docs.anthropic.com/en/docs/agents) 构建。
+OpenPollen 是一个安全、易用、可扩展的开源 AI Agent 框架，基于 [Claude Agent SDK](https://docs.anthropic.com/en/docs/agents) 构建。
 
 ## 为什么选择 OpenPollen？
 
 - **即插即用**：一条命令完成初始化，自动配置 WebChat 网页聊天界面
 - **多渠道统一**：同一个 Agent 可同时接入 WebChat、钉钉、企业微信等多个聊天平台
 - **技能可扩展**：基于 SKILL.md 开放标准定义 Agent 技能，支持社区生态
-- **国产化友好**：通过 Beelive 平台代理服务，无需翻墙即可使用 Claude 模型
+- **云端代理**：通过 OpenPollen 平台代理服务，简化 API 接入流程
 - **企业级安全**：API Key / JWT 认证、工具白名单、并发控制、预算限制
 
 ## 核心概念

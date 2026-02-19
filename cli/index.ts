@@ -142,7 +142,7 @@ const program = new Command();
 
 program
   .name('openpollen')
-  .description('OpenPollen — 安全、易用、国产化的 AI Agent 平台')
+  .description('OpenPollen — 安全、易用、可扩展的开源 AI Agent 框架')
   .version('0.1.0');
 
 // === start ===

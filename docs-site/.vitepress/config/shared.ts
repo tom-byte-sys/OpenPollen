@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress'
 
 export const shared = defineConfig({
   title: 'OpenPollen',
-  description: '安全、易用、国产化的 AI Agent 平台',
+  description: '安全、易用、可扩展的开源 AI Agent 框架',
 
   base: '/docs/',
   appearance: 'dark',
