@@ -15,7 +15,8 @@ import { maskSecret } from '../src/utils/crypto.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const pkg = JSON.parse(readFileSync(resolve(__dirname, '..', 'package.json'), 'utf-8'));
+// cli/index.ts → dist/cli/index.js, 需要往上两级到包根目录
+const pkg = JSON.parse(readFileSync(resolve(__dirname, '..', '..', 'package.json'), 'utf-8'));
 
 const PID_FILE = resolve(homedir(), '.openpollen', 'openpollen.pid');
 const AUTH_FILE = resolve(homedir(), '.openpollen', 'auth.json');
