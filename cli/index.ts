@@ -222,7 +222,7 @@ program
 
     // 1. 选择模型来源
     const providerIndex = await choose('选择 AI 模型来源:', [
-      'Beelive 云端托管 (推荐，无需翻墙，按量计费)',
+      'OpenPollen Cloud (官方云服务，开箱即用)',
       '自有 API Key (Anthropic)',
       '本地模型 (Ollama)',
     ]);
@@ -230,7 +230,7 @@ program
     const providers: Record<string, unknown> = {};
 
     if (providerIndex === 0) {
-      const subIndex = await choose('Beelive 平台配置方式:', [
+      const subIndex = await choose('OpenPollen Cloud 配置方式:', [
         '我已有 API Key（直接输入）',
         '注册新账号',
         '登录已有账号',
@@ -238,14 +238,14 @@ program
 
       if (subIndex === 0) {
         // 直接输入 API Key
-        const apiKey = await ask('输入你的 Beelive API Key: ');
+        const apiKey = await ask('输入你的 OpenPollen Cloud API Key: ');
         providers['beelive'] = { enabled: true, apiKey };
       } else if (subIndex === 1) {
         // 注册新账号
         const email = await ask('邮箱: ');
         const password = await ask('密码: ');
         if (!email || !password) {
-          console.log('邮箱和密码不能为空，跳过 Beelive 配置。');
+          console.log('邮箱和密码不能为空，跳过 OpenPollen Cloud 配置。');
         } else {
           try {
             const atClient = createBeeliveClient();
@@ -308,7 +308,7 @@ program
         const email = await ask('邮箱: ');
         const password = await ask('密码: ');
         if (!email || !password) {
-          console.log('邮箱和密码不能为空，跳过 Beelive 配置。');
+          console.log('邮箱和密码不能为空，跳过 OpenPollen Cloud 配置。');
         } else {
           try {
             const atClient = createBeeliveClient();
@@ -460,7 +460,7 @@ program
 // === login ===
 program
   .command('login')
-  .description('登录到 Beelive 平台')
+  .description('登录到 OpenPollen Cloud')
   .action(async () => {
     const rl = createInterface({ input: process.stdin, output: process.stdout });
     const ask = (q: string): Promise<string> =>
@@ -492,7 +492,7 @@ program
           // 首次创建，拿到完整 key
           updateConfigProviders(keyResult.api_key);
           console.log(`  API Key: ${maskSecret(keyResult.api_key)}`);
-          console.log('  已自动更新配置文件 providers.beelive');
+          console.log('  已自动更新配置文件');
         } else if (keyResult.exists) {
           // key 已存在，只有前缀
           console.log(`  Desktop Key 已存在 (${keyResult.key_prefix})`);
@@ -968,7 +968,7 @@ modelCmd
       const beeliveProvider = providers.beelive ?? providers.agentterm;
       if (beeliveProvider) {
         const status = beeliveProvider.enabled ? (beeliveProvider.apiKey ? 'OK' : '缺少 API Key') : '未启用';
-        console.log(`  Beelive 聚合平台`);
+        console.log(`  OpenPollen Cloud`);
         console.log(`    状态: ${status}`);
         if (beeliveProvider.apiKey) console.log(`    API Key: ${maskSecret(beeliveProvider.apiKey)}`);
         if (beeliveProvider.baseUrl) console.log(`    Base URL: ${beeliveProvider.baseUrl}`);
@@ -1011,7 +1011,7 @@ modelCmd
       const token = loadAuthToken();
       if (token && (providers.beelive?.enabled || providers.agentterm?.enabled)) {
         const atClient = createBeeliveClient(token);
-        console.log('\n  Beelive 平台账户信息:');
+        console.log('\n  OpenPollen Cloud 账户信息:');
         await showAccountStatus(atClient);
       }
 
