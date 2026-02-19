@@ -12,7 +12,7 @@
     "build:ui": "npx vite build --config ui/vite.config.ts ui",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "lint": "eslint src/ cli/ --ext .ts",
+    "lint": "eslint src/ cli/ plugins/",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
@@ -28,7 +28,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gyp3085000/OpenPollen.git"
+    "url": "https://github.com/tom-byte-sys/OpenPollen.git"
   },
   "files": [
     "dist/",

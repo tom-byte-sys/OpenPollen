@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+.github
+docs-site
+ui
+tests
+*.md
+!README.md
+.env
+.env.*
+openpollen.json

@@ -1,0 +1,15 @@
+services:
+  openpollen:
+    build: .
+    ports:
+      - "18800:18800"   # Gateway API
+      - "3001:3001"     # WebChat UI
+    volumes:
+      - ./openpollen.json:/app/openpollen.json:ro
+      - openpollen-data:/data
+    env_file:
+      - .env
+    restart: unless-stopped
+
+volumes:
+  openpollen-data:

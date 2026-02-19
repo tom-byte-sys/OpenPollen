@@ -2,6 +2,8 @@
 
 > 安全、易用、可扩展的开源 AI Agent 框架
 
+[English](./README.en.md)
+
 OpenPollen 是一个开源的多平台 AI Agent 框架，基于 Claude Agent SDK 构建。支持钉钉、企业微信、Telegram 等聊天平台接入，通过 SKILL.md（Agent Skills 开放标准）实现技能的安装、发现和执行。
 
 ## 特性
@@ -73,7 +75,7 @@ openpollen skill create my-skill         # 创建新技能
 ## 开发
 
 ```bash
-git clone https://github.com/gyp3085000/OpenPollen.git
+git clone https://github.com/tom-byte-sys/OpenPollen.git
 cd OpenPollen
 npm install
 npm run dev
