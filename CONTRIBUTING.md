@@ -5,7 +5,7 @@
 ## 开发环境
 
 ```bash
-git clone https://github.com/user/OpenPollen.git
+git clone https://github.com/tom-byte-sys/OpenPollen.git
 cd OpenPollen
 npm install
 npm run dev

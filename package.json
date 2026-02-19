@@ -35,6 +35,7 @@
     "skills/",
     "openpollen.json.example",
     "README.md",
+    "README.en.md",
     "LICENSE"
   ],
   "engines": {

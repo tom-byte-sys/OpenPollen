@@ -11,6 +11,7 @@ dist/
 # Config with secrets
 openpollen.json
 agenthub.json
+CLAUDE.md
 
 # Data
 *.db

@@ -2,7 +2,7 @@ import { getLogger } from '../utils/logger.js';
 
 const log = getLogger('beelive-client');
 
-const DEFAULT_BASE_URL = process.env.BEELIVE_API_URL || 'https://lite.beebywork.com/api/v1';
+const DEFAULT_BASE_URL = process.env.BEELIVE_API_URL || 'https://api.openpollen.dev/api/v1';
 
 export interface AuthResponse {
   access_token: string;

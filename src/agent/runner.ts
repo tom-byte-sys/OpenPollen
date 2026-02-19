@@ -8,7 +8,7 @@ import { SkillManager } from './skill-manager.js';
 
 const log = getLogger('agent-runner');
 
-const BEELIVE_PROXY_URL = process.env.BEELIVE_PROXY_URL || 'https://lite.beebywork.com/api/v1/anthropic-proxy';
+const BEELIVE_PROXY_URL = process.env.BEELIVE_PROXY_URL || 'https://api.openpollen.dev/api/v1/anthropic-proxy';
 
 export interface AgentRunnerOptions {
   config: AppConfig;

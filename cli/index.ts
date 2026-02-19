@@ -32,7 +32,7 @@ function loadAuthToken(): string | null {
 
 function createMarketplaceClient(configPath?: string): MarketplaceClient {
   const config = loadConfig(configPath);
-  const apiUrl = config.marketplace?.apiUrl || process.env.BEELIVE_MARKETPLACE_URL || 'https://lite.beebywork.com/api/v1/skills-market';
+  const apiUrl = config.marketplace?.apiUrl || process.env.BEELIVE_MARKETPLACE_URL || 'https://api.openpollen.dev/api/v1/skills-market';
   const token = loadAuthToken();
   return new MarketplaceClient(apiUrl, token ?? undefined);
 }

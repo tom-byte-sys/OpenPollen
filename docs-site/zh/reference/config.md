@@ -97,7 +97,7 @@ Beelive 云端代理（推荐国内用户）。
 |------|------|--------|------|
 | `enabled` | boolean | `false` | 是否启用 |
 | `apiKey` | string | — | Beelive API Key |
-| `baseUrl` | string | `https://your-beelive-server.com/api/v1/anthropic-proxy` | 代理地址 |
+| `baseUrl` | string | `https://api.openpollen.dev/api/v1/anthropic-proxy` | 代理地址 |
 
 ### providers.anthropic
 
@@ -161,7 +161,7 @@ OpenAI 兼容 API。
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `apiUrl` | string | `https://your-beelive-server.com/api/v1/skills-market` | 市场 API 地址 |
+| `apiUrl` | string | `https://api.openpollen.dev/api/v1/skills-market` | 市场 API 地址 |
 
 ## 完整示例
 

@@ -27,7 +27,7 @@ openpollen --version
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/gyp3085000/OpenPollen.git
+git clone https://github.com/tom-byte-sys/OpenPollen.git
 cd OpenPollen
 
 # 2. 安装依赖
