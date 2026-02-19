@@ -35,6 +35,12 @@ export async function loadPluginsFromDirectory(
       continue;
     }
 
+    // 跳过未配置的插件
+    if (!configs[entry.name]) {
+      log.debug({ plugin: entry.name }, '插件未配置，跳过');
+      continue;
+    }
+
     try {
       const moduleUrl = pathToFileURL(modulePath).href;
       const mod = await import(moduleUrl) as PluginModule;

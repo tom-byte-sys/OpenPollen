@@ -13,6 +13,10 @@ import { MarketplaceClient } from '../src/agent/marketplace-client.js';
 import { BeeliveClient } from '../src/agent/beelive-client.js';
 import { maskSecret } from '../src/utils/crypto.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const pkg = JSON.parse(readFileSync(resolve(__dirname, '..', 'package.json'), 'utf-8'));
+
 const PID_FILE = resolve(homedir(), '.openpollen', 'openpollen.pid');
 const AUTH_FILE = resolve(homedir(), '.openpollen', 'auth.json');
 
@@ -143,7 +147,7 @@ const program = new Command();
 program
   .name('openpollen')
   .description('OpenPollen — 安全、易用、可扩展的开源 AI Agent 框架')
-  .version('0.1.0');
+  .version(pkg.version);
 
 // === start ===
 program
@@ -158,7 +162,7 @@ program
 
       writePidFile();
 
-      console.log('\n  OpenPollen v0.1.0 已启动');
+      console.log(`\n  OpenPollen v${pkg.version} 已启动`);
       console.log(`  Gateway: http://${hub.config.gateway.host}:${hub.config.gateway.port}`);
 
       if (hub.config.channels.webchat?.enabled) {
