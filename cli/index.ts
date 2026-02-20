@@ -6,6 +6,7 @@ import { existsSync, mkdirSync, writeFileSync, readFileSync, watchFile, statSync
 import { resolve, dirname } from 'node:path';
 import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import * as p from '@clack/prompts';
 import { createOpenPollen } from '../src/index.js';
 import { loadConfig, resolveConfigPath } from '../src/config/loader.js';
 import { SkillManager } from '../src/agent/skill-manager.js';
@@ -33,7 +34,7 @@ function loadAuthToken(): string | null {
 
 function createMarketplaceClient(configPath?: string): MarketplaceClient {
   const config = loadConfig(configPath);
-  const apiUrl = config.marketplace?.apiUrl || process.env.BEELIVE_MARKETPLACE_URL || 'https://api.openpollen.dev/api/v1/skills-market';
+  const apiUrl = config.marketplace?.apiUrl || process.env.BEELIVE_MARKETPLACE_URL || 'https://lite.beebywork.com/api/v1/skills-market';
   const token = loadAuthToken();
   return new MarketplaceClient(apiUrl, token ?? undefined);
 }
@@ -143,6 +144,94 @@ function createBeeliveClient(token?: string): BeeliveClient {
   return new BeeliveClient(undefined, token ?? undefined);
 }
 
+/**
+ * 打开浏览器（跨平台）
+ */
+async function openBrowser(url: string): Promise<void> {
+  const { exec } = await import('node:child_process');
+  const platform = process.platform;
+  const cmd = platform === 'win32' ? `start "" "${url}"`
+    : platform === 'darwin' ? `open "${url}"`
+    : `xdg-open "${url}"`;
+  const child = exec(cmd, () => {});
+  // 不让子进程阻塞 Node.js 退出
+  child.unref();
+}
+
+/**
+ * 浏览器认证流程 (Device Flow)
+ * CLI 发起认证 → 打开浏览器 → 用户登录 → CLI 轮询获取 token
+ */
+async function doBrowserAuth(providers: Record<string, unknown>): Promise<void> {
+  const atClient = createBeeliveClient();
+  const s = p.spinner();
+
+  try {
+    s.start('正在发起认证...');
+    const { session_id, auth_url } = await atClient.startCliAuth();
+    s.stop('认证链接已生成');
+
+    p.log.info(`请在浏览器中完成登录:`);
+    p.log.message(auth_url);
+
+    // 尝试自动打开浏览器
+    await openBrowser(auth_url);
+
+    s.start('等待浏览器认证...');
+
+    // 轮询等待认证完成（每 2 秒一次，最多 5 分钟）
+    const maxAttempts = 150;
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+
+      try {
+        const result = await atClient.pollCliAuth(session_id);
+        if (result.status === 'completed') {
+          s.stop(`认证成功! 欢迎 ${result.email || '用户'}`);
+
+          // 保存 token
+          if (result.token) {
+            saveAuthToken(result.token, result.email || '');
+            atClient.setToken(result.token);
+          }
+
+          // 保存 API Key 到 providers
+          if (result.api_key) {
+            providers['beelive'] = { enabled: true, apiKey: result.api_key };
+            p.log.success(`API Key 已获取: ${maskSecret(result.api_key)}`);
+          } else {
+            // 没有新 key（已存在），尝试通过 token 获取
+            try {
+              const keyResult = await atClient.getDesktopApiKey();
+              if (keyResult.api_key) {
+                providers['beelive'] = { enabled: true, apiKey: keyResult.api_key };
+                p.log.success(`API Key 已获取: ${maskSecret(keyResult.api_key)}`);
+              } else if (keyResult.exists) {
+                p.log.info(`Desktop Key 已存在 (${keyResult.key_prefix})，请前往控制台复制完整密钥后配置。`);
+              }
+            } catch {
+              // 忽略，token 已保存，用户可以稍后配置 API Key
+            }
+          }
+
+          // 显示账户状态
+          await showAccountStatus(atClient);
+          return;
+        }
+      } catch {
+        // 轮询失败（网络问题等），继续重试
+      }
+    }
+
+    s.stop('认证超时');
+    p.log.warn('浏览器认证超时，请重试或使用 API Key 方式。');
+  } catch (err) {
+    s.stop('认证失败');
+    p.log.error(err instanceof Error ? err.message : String(err));
+    p.log.info('提示: 可使用 API Key 方式，或稍后运行 `openpollen login`。');
+  }
+}
+
 const program = new Command();
 
 program
@@ -201,177 +290,160 @@ program
   .command('init')
   .description('交互式初始化配置')
   .action(async () => {
-    const rl = createInterface({ input: process.stdin, output: process.stdout });
-    const ask = (q: string): Promise<string> =>
-      new Promise(resolve => rl.question(q, answer => resolve(answer.trim())));
-
-    const choose = async (prompt: string, options: string[]): Promise<number> => {
-      console.log(prompt);
-      for (let i = 0; i < options.length; i++) {
-        console.log(`  ${i + 1}. ${options[i]}`);
-      }
-      while (true) {
-        const answer = await ask(`请选择 (1-${options.length}): `);
-        const n = parseInt(answer, 10);
-        if (n >= 1 && n <= options.length) return n - 1;
-        console.log('无效选择，请重试。');
-      }
-    };
-
-    console.log('\n  欢迎使用 OpenPollen!\n');
+    p.intro('欢迎使用 OpenPollen!');
 
     // 1. 选择模型来源
-    const providerIndex = await choose('选择 AI 模型来源:', [
-      'OpenPollen Cloud (官方云服务，开箱即用)',
-      '自有 API Key (Anthropic)',
-      '本地模型 (Ollama)',
-    ]);
+    const providerChoice = await p.select({
+      message: '选择 AI 模型来源',
+      options: [
+        { value: 'cloud', label: 'OpenPollen Cloud', hint: '官方云服务，开箱即用' },
+        { value: 'anthropic', label: 'Anthropic', hint: '使用自有 Claude API Key' },
+        { value: 'openai', label: 'OpenAI', hint: '使用自有 OpenAI API Key' },
+        { value: 'ollama', label: '本地模型 (Ollama)', hint: '离线运行，完全私有' },
+        { value: 'compatible', label: '其他兼容模型', hint: 'DeepSeek / Kimi / GLM 等' },
+      ],
+    });
+    if (p.isCancel(providerChoice)) { p.cancel('已取消'); process.exit(0); }
 
     const providers: Record<string, unknown> = {};
 
-    if (providerIndex === 0) {
-      const subIndex = await choose('OpenPollen Cloud 配置方式:', [
-        '我已有 API Key（直接输入）',
-        '注册新账号',
-        '登录已有账号',
-      ]);
+    if (providerChoice === 'cloud') {
+      // OpenPollen Cloud
+      const authMethod = await p.select({
+        message: 'OpenPollen Cloud 配置方式',
+        options: [
+          { value: 'browser', label: '浏览器登录 (推荐)', hint: '自动打开浏览器完成认证' },
+          { value: 'apikey', label: '输入已有 API Key', hint: '已在控制台创建过 Key' },
+        ],
+      });
+      if (p.isCancel(authMethod)) { p.cancel('已取消'); process.exit(0); }
 
-      if (subIndex === 0) {
-        // 直接输入 API Key
-        const apiKey = await ask('输入你的 OpenPollen Cloud API Key: ');
-        providers['beelive'] = { enabled: true, apiKey };
-      } else if (subIndex === 1) {
-        // 注册新账号
-        const email = await ask('邮箱: ');
-        const password = await ask('密码: ');
-        if (!email || !password) {
-          console.log('邮箱和密码不能为空，跳过 OpenPollen Cloud 配置。');
-        } else {
-          try {
-            const atClient = createBeeliveClient();
-            const authResult = await atClient.register(email, password);
-            atClient.setToken(authResult.access_token);
-            saveAuthToken(authResult.access_token, email);
-            console.log('  注册成功!');
-
-            // 检查账号状态
-            try {
-              const me = await atClient.getMe();
-              if (me.status === 'pending') {
-                console.log('  账号待激活，请查收邮件完成激活后运行 `openpollen login` 获取 API Key。');
-              } else {
-                // 获取 Desktop API Key
-                try {
-                  const keyResult = await atClient.getDesktopApiKey();
-                  if (keyResult.api_key) {
-                    providers['beelive'] = { enabled: true, apiKey: keyResult.api_key };
-                    console.log(`  API Key 已获取: ${maskSecret(keyResult.api_key)}`);
-                  } else if (keyResult.exists) {
-                    console.log(`  Desktop Key 已存在 (${keyResult.key_prefix})`);
-                    console.log('  完整密钥仅首次创建时显示，请手动输入。');
-                    const manualKey = await ask('输入 API Key (留空跳过): ');
-                    if (manualKey) {
-                      providers['beelive'] = { enabled: true, apiKey: manualKey };
-                    }
-                  }
-                } catch (keyErr) {
-                  console.log(`  自动获取 API Key 失败: ${keyErr instanceof Error ? keyErr.message : keyErr}`);
-                  const manualKey = await ask('手动输入 API Key (留空跳过): ');
-                  if (manualKey) {
-                    providers['beelive'] = { enabled: true, apiKey: manualKey };
-                  }
-                }
-              }
-            } catch {
-              // getMe 失败时尝试直接获取 key
-              try {
-                const keyResult = await atClient.getDesktopApiKey();
-                if (keyResult.api_key) {
-                  providers['beelive'] = { enabled: true, apiKey: keyResult.api_key };
-                  console.log(`  API Key 已获取: ${maskSecret(keyResult.api_key)}`);
-                } else if (keyResult.exists) {
-                  console.log(`  Desktop Key 已存在 (${keyResult.key_prefix})，请手动输入。`);
-                }
-              } catch {
-                console.log('  请运行 `openpollen login` 获取 API Key。');
-              }
-            }
-
-            await showAccountStatus(atClient);
-          } catch (err) {
-            console.error('  注册失败:', err instanceof Error ? err.message : err);
-            console.log('  提示: 如已有账号，可运行 `openpollen login` 登录。');
-          }
-        }
+      if (authMethod === 'browser') {
+        await doBrowserAuth(providers);
       } else {
-        // 登录已有账号
-        const email = await ask('邮箱: ');
-        const password = await ask('密码: ');
-        if (!email || !password) {
-          console.log('邮箱和密码不能为空，跳过 OpenPollen Cloud 配置。');
-        } else {
-          try {
-            const atClient = createBeeliveClient();
-            const authResult = await atClient.login(email, password);
-            atClient.setToken(authResult.access_token);
-            saveAuthToken(authResult.access_token, email);
-            console.log('  登录成功!');
-
-            // 获取 Desktop API Key
-            try {
-              const keyResult = await atClient.getDesktopApiKey();
-              if (keyResult.api_key) {
-                providers['beelive'] = { enabled: true, apiKey: keyResult.api_key };
-                console.log(`  API Key 已获取: ${maskSecret(keyResult.api_key)}`);
-              } else if (keyResult.exists) {
-                console.log(`  Desktop Key 已存在 (${keyResult.key_prefix})`);
-                console.log('  完整密钥仅首次创建时显示，请手动输入。');
-                const manualKey = await ask('输入 API Key (留空跳过): ');
-                if (manualKey) {
-                  providers['beelive'] = { enabled: true, apiKey: manualKey };
-                }
-              }
-            } catch (keyErr) {
-              console.log(`  自动获取 API Key 失败: ${keyErr instanceof Error ? keyErr.message : keyErr}`);
-              const manualKey = await ask('手动输入 API Key (留空跳过): ');
-              if (manualKey) {
-                providers['beelive'] = { enabled: true, apiKey: manualKey };
-              }
-            }
-
-            await showAccountStatus(atClient);
-          } catch (err) {
-            console.error('  登录失败:', err instanceof Error ? err.message : err);
-            console.log('  提示: 可稍后运行 `openpollen login` 重试。');
-          }
-        }
+        const apiKey = await p.text({ message: '输入你的 OpenPollen Cloud API Key', validate: (v) => !v ? 'API Key 不能为空' : undefined });
+        if (p.isCancel(apiKey)) { p.cancel('已取消'); process.exit(0); }
+        providers['beelive'] = { enabled: true, apiKey };
       }
-    } else if (providerIndex === 1) {
-      const apiKey = await ask('输入你的 Anthropic API Key: ');
+    } else if (providerChoice === 'anthropic') {
+      const apiKey = await p.text({ message: '输入你的 Anthropic API Key', validate: (v) => !v ? 'API Key 不能为空' : undefined });
+      if (p.isCancel(apiKey)) { p.cancel('已取消'); process.exit(0); }
       providers['anthropic'] = { enabled: true, apiKey };
-    } else {
-      const baseUrl = await ask('Ollama 地址 (默认 http://localhost:11434): ') || 'http://localhost:11434';
-      const model = await ask('模型名称 (默认 qwen3-coder): ') || 'qwen3-coder';
+    } else if (providerChoice === 'openai') {
+      const apiKey = await p.text({ message: '输入你的 OpenAI API Key', validate: (v) => !v ? 'API Key 不能为空' : undefined });
+      if (p.isCancel(apiKey)) { p.cancel('已取消'); process.exit(0); }
+      providers['openai'] = { enabled: true, apiKey };
+    } else if (providerChoice === 'ollama') {
+      const baseUrl = await p.text({ message: 'Ollama 地址', defaultValue: 'http://localhost:11434' });
+      if (p.isCancel(baseUrl)) { p.cancel('已取消'); process.exit(0); }
+      const model = await p.text({ message: '模型名称', defaultValue: 'qwen3-coder' });
+      if (p.isCancel(model)) { p.cancel('已取消'); process.exit(0); }
       providers['ollama'] = { enabled: true, baseUrl, model };
+    } else if (providerChoice === 'compatible') {
+      // 其他兼容模型
+      const compatModel = await p.select({
+        message: '选择模型提供商',
+        options: [
+          { value: 'deepseek', label: 'DeepSeek', hint: 'deepseek.com' },
+          { value: 'kimi', label: 'Kimi (Moonshot)', hint: 'platform.moonshot.cn' },
+          { value: 'glm', label: 'GLM (智谱)', hint: 'open.bigmodel.cn' },
+          { value: 'custom', label: '自定义兼容 API', hint: '任意 OpenAI 兼容接口' },
+        ],
+      });
+      if (p.isCancel(compatModel)) { p.cancel('已取消'); process.exit(0); }
+
+      const compatDefaults: Record<string, { baseUrl: string; defaultModel: string }> = {
+        deepseek: { baseUrl: 'https://api.deepseek.com/v1', defaultModel: 'deepseek-chat' },
+        kimi: { baseUrl: 'https://api.moonshot.cn/v1', defaultModel: 'moonshot-v1-8k' },
+        glm: { baseUrl: 'https://open.bigmodel.cn/api/paas/v4', defaultModel: 'glm-4-flash' },
+        custom: { baseUrl: '', defaultModel: '' },
+      };
+      const defaults = compatDefaults[compatModel as string];
+
+      const apiKey = await p.text({ message: '输入 API Key', validate: (v) => !v ? 'API Key 不能为空' : undefined });
+      if (p.isCancel(apiKey)) { p.cancel('已取消'); process.exit(0); }
+
+      const baseUrl = await p.text({
+        message: 'API Base URL',
+        defaultValue: defaults.baseUrl,
+        validate: (v) => !v ? 'Base URL 不能为空' : undefined,
+      });
+      if (p.isCancel(baseUrl)) { p.cancel('已取消'); process.exit(0); }
+
+      const model = await p.text({
+        message: '模型名称',
+        defaultValue: defaults.defaultModel,
+        validate: (v) => !v ? '模型名称不能为空' : undefined,
+      });
+      if (p.isCancel(model)) { p.cancel('已取消'); process.exit(0); }
+
+      // 兼容模型走 anthropic provider 并覆盖 baseUrl
+      providers['anthropic'] = { enabled: true, apiKey, baseUrl, model };
     }
 
     // 2. 选择聊天平台
     const channels: Record<string, unknown> = {};
 
-    const enableDingtalk = (await ask('\n是否启用钉钉 Bot? (y/N): ')).toLowerCase() === 'y';
-    if (enableDingtalk) {
-      const clientId = await ask('钉钉 Client ID: ');
-      const clientSecret = await ask('钉钉 Client Secret: ');
+    const channelChoices = await p.multiselect({
+      message: '启用聊天平台',
+      options: [
+        { value: 'webchat', label: 'Web Chat', hint: '内置网页聊天' },
+        { value: 'dingtalk', label: '钉钉 Bot', hint: 'Stream 模式' },
+        { value: 'wechat', label: '企业微信', hint: '回调模式' },
+      ],
+      initialValues: ['webchat'],
+      required: false,
+    });
+    if (p.isCancel(channelChoices)) { p.cancel('已取消'); process.exit(0); }
+
+    if (channelChoices.includes('webchat')) {
+      const port = await p.text({ message: 'WebChat 端口', defaultValue: '3001' });
+      if (p.isCancel(port)) { p.cancel('已取消'); process.exit(0); }
+      channels['webchat'] = { enabled: true, port: parseInt(port, 10) };
+    }
+
+    if (channelChoices.includes('dingtalk')) {
+      const clientId = await p.text({ message: '钉钉 Client ID', validate: (v) => !v ? '不能为空' : undefined });
+      if (p.isCancel(clientId)) { p.cancel('已取消'); process.exit(0); }
+      const clientSecret = await p.text({ message: '钉钉 Client Secret', validate: (v) => !v ? '不能为空' : undefined });
+      if (p.isCancel(clientSecret)) { p.cancel('已取消'); process.exit(0); }
       channels['dingtalk'] = { enabled: true, clientId, clientSecret, groupPolicy: 'mention' };
     }
 
-    const enableWebchat = (await ask('是否启用 Web Chat? (Y/n): ')).toLowerCase() !== 'n';
-    if (enableWebchat) {
-      const port = parseInt(await ask('WebChat 端口 (默认 3001): ') || '3001', 10);
-      channels['webchat'] = { enabled: true, port };
+    if (channelChoices.includes('wechat')) {
+      const corpId = await p.text({ message: '企业微信 Corp ID', validate: (v) => !v ? '不能为空' : undefined });
+      if (p.isCancel(corpId)) { p.cancel('已取消'); process.exit(0); }
+      const agentId = await p.text({ message: '企业微信 Agent ID', validate: (v) => !v ? '不能为空' : undefined });
+      if (p.isCancel(agentId)) { p.cancel('已取消'); process.exit(0); }
+      const secret = await p.text({ message: '企业微信 Secret', validate: (v) => !v ? '不能为空' : undefined });
+      if (p.isCancel(secret)) { p.cancel('已取消'); process.exit(0); }
+      const token = await p.text({ message: '企业微信 Token', validate: (v) => !v ? '不能为空' : undefined });
+      if (p.isCancel(token)) { p.cancel('已取消'); process.exit(0); }
+      const encodingAESKey = await p.text({ message: '企业微信 EncodingAESKey', validate: (v) => !v ? '不能为空' : undefined });
+      if (p.isCancel(encodingAESKey)) { p.cancel('已取消'); process.exit(0); }
+      channels['wechat'] = { enabled: true, corpId, agentId, secret, token, encodingAESKey, callbackPort: 3002 };
     }
 
-    // 3. 生成配置
+    // 3. 内置技能
+    const builtinDir = getBuiltinSkillsDir();
+    let installSkills = false;
+    let builtinSkills: string[] = [];
+    if (existsSync(builtinDir)) {
+      builtinSkills = readdirSync(builtinDir, { withFileTypes: true })
+        .filter(e => e.isDirectory())
+        .map(e => e.name);
+
+      if (builtinSkills.length > 0) {
+        const shouldInstall = await p.confirm({
+          message: `是否安装内置技能 (${builtinSkills.join(', ')})?`,
+          initialValue: true,
+        });
+        if (p.isCancel(shouldInstall)) { p.cancel('已取消'); process.exit(0); }
+        installSkills = shouldInstall;
+      }
+    }
+
+    // 4. 生成配置
     const config = {
       agent: {
         model: 'claude-sonnet-4-20250514',
@@ -393,55 +465,46 @@ program
       logging: { level: 'info', file: '~/.openpollen/logs/openpollen.log' },
     };
 
-    // 4. 写入配置文件
+    // 5. 写入配置文件
     const hiveDir = resolve(homedir(), '.openpollen');
     if (!existsSync(hiveDir)) {
       mkdirSync(hiveDir, { recursive: true });
     }
 
     const configPath = resolve(hiveDir, 'openpollen.json');
-    const overwrite = existsSync(configPath)
-      ? (await ask(`\n配置文件已存在 (${configPath})，是否覆盖? (y/N): `)).toLowerCase() === 'y'
-      : true;
-
-    if (overwrite) {
-      writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
-      console.log(`\n  配置已保存到 ${configPath}`);
-    } else {
-      console.log('\n  已取消，配置未修改。');
+    let shouldWrite = true;
+    if (existsSync(configPath)) {
+      const overwrite = await p.confirm({ message: `配置文件已存在，是否覆盖?`, initialValue: false });
+      if (p.isCancel(overwrite)) { p.cancel('已取消'); process.exit(0); }
+      shouldWrite = overwrite;
     }
 
-    // 5. 创建技能目录
+    if (shouldWrite) {
+      writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
+      p.log.success(`配置已保存到 ${configPath}`);
+    } else {
+      p.log.info('已跳过，配置未修改。');
+    }
+
+    // 6. 创建技能目录 & 安装内置技能
     const skillsDir = resolve(homedir(), '.openpollen', 'skills');
     if (!existsSync(skillsDir)) {
       mkdirSync(skillsDir, { recursive: true });
-      console.log(`  技能目录已创建: ${skillsDir}`);
     }
 
-    // 6. 安装内置技能
-    const builtinDir = getBuiltinSkillsDir();
-    if (existsSync(builtinDir)) {
-      const builtinSkills = readdirSync(builtinDir, { withFileTypes: true })
-        .filter(e => e.isDirectory())
-        .map(e => e.name);
-
-      if (builtinSkills.length > 0) {
-        const installBuiltin = (await ask(`\n是否安装内置技能 (${builtinSkills.join(', ')})? (Y/n): `)).toLowerCase() !== 'n';
-        if (installBuiltin) {
-          const manager = new SkillManager(skillsDir);
-          for (const name of builtinSkills) {
-            const skillPath = resolve(builtinDir, name);
-            try {
-              if (!existsSync(resolve(skillsDir, name))) {
-                manager.installFromLocal(skillPath);
-                console.log(`  已安装技能: ${name}`);
-              } else {
-                console.log(`  技能已存在: ${name} (跳过)`);
-              }
-            } catch (error) {
-              console.error(`  安装技能 ${name} 失败:`, error instanceof Error ? error.message : error);
-            }
+    if (installSkills && builtinSkills.length > 0) {
+      const manager = new SkillManager(skillsDir);
+      for (const name of builtinSkills) {
+        const skillPath = resolve(builtinDir, name);
+        try {
+          if (!existsSync(resolve(skillsDir, name))) {
+            manager.installFromLocal(skillPath);
+            p.log.success(`已安装技能: ${name}`);
+          } else {
+            p.log.info(`技能已存在: ${name} (跳过)`);
           }
+        } catch (error) {
+          p.log.error(`安装技能 ${name} 失败: ${error instanceof Error ? error.message : error}`);
         }
       }
     }
@@ -452,64 +515,100 @@ program
       mkdirSync(logsDir, { recursive: true });
     }
 
-    console.log('\n  初始化完成! 运行 `openpollen start` 启动。\n');
+    // 8. 配置摘要
+    const providerNames: Record<string, string> = {
+      beelive: 'OpenPollen Cloud',
+      anthropic: 'Anthropic',
+      openai: 'OpenAI',
+      ollama: 'Ollama',
+    };
+    const activeProviders = Object.keys(providers).map(k => providerNames[k] || k);
+    const activeChannels = Object.keys(channels).map(k => {
+      const names: Record<string, string> = { webchat: 'Web Chat', dingtalk: '钉钉 Bot', wechat: '企业微信' };
+      return names[k] || k;
+    });
 
-    rl.close();
+    p.note(
+      [
+        `模型来源:  ${activeProviders.join(', ') || '(未配置)'}`,
+        `聊天平台:  ${activeChannels.join(', ') || '(未配置)'}`,
+        `内置技能:  ${installSkills ? builtinSkills.join(', ') : '未安装'}`,
+        `配置文件:  ${configPath}`,
+        '',
+        '常用命令:',
+        '  openpollen start          启动服务',
+        '  openpollen config show    查看当前配置',
+        '  openpollen model list     查看模型状态',
+        '  openpollen skill list     查看已安装技能',
+      ].join('\n'),
+      '配置摘要',
+    );
+
+    p.outro('初始化完成! 运行 `openpollen start` 启动。');
+    process.exit(0);
   });
 
 // === login ===
 program
   .command('login')
   .description('登录到 OpenPollen Cloud')
-  .action(async () => {
-    const rl = createInterface({ input: process.stdin, output: process.stdout });
-    const ask = (q: string): Promise<string> =>
-      new Promise(resolve => rl.question(q, answer => resolve(answer.trim())));
+  .option('--email', '使用邮箱密码方式登录')
+  .action(async (options: { email?: boolean }) => {
+    p.intro('登录 OpenPollen Cloud');
 
-    try {
-      const email = await ask('邮箱: ');
-      const password = await ask('密码: ');
+    if (!options.email) {
+      // 默认走浏览器认证
+      const loginProviders: Record<string, unknown> = {};
+      await doBrowserAuth(loginProviders);
 
-      if (!email || !password) {
-        console.log('邮箱和密码不能为空');
-        rl.close();
-        return;
+      // 如果获取到了 API Key，更新配置文件
+      const beelive = loginProviders['beelive'] as { apiKey?: string } | undefined;
+      if (beelive?.apiKey) {
+        updateConfigProviders(beelive.apiKey);
+        p.log.info('已自动更新配置文件');
       }
 
-      // 1. 登录
+      p.outro('');
+      process.exit(0);
+    }
+
+    // --email 方式：邮箱密码登录
+    const email = await p.text({ message: '邮箱', validate: (v) => !v ? '邮箱不能为空' : undefined });
+    if (p.isCancel(email)) { p.cancel('已取消'); process.exit(0); }
+    const password = await p.text({ message: '密码', validate: (v) => !v ? '密码不能为空' : undefined });
+    if (p.isCancel(password)) { p.cancel('已取消'); process.exit(0); }
+
+    const s = p.spinner();
+    s.start('正在登录...');
+    try {
       const atClient = createBeeliveClient();
       const authResult = await atClient.login(email, password);
       atClient.setToken(authResult.access_token);
-
-      // 2. 保存 JWT
       saveAuthToken(authResult.access_token, email);
-      console.log('\n  登录成功!');
+      s.stop('登录成功!');
 
-      // 3. 获取/创建 Desktop API Key 并更新配置
+      // 获取/创建 Desktop API Key 并更新配置
       try {
         const keyResult = await atClient.getDesktopApiKey();
         if (keyResult.api_key) {
-          // 首次创建，拿到完整 key
           updateConfigProviders(keyResult.api_key);
-          console.log(`  API Key: ${maskSecret(keyResult.api_key)}`);
-          console.log('  已自动更新配置文件');
+          p.log.success(`API Key: ${maskSecret(keyResult.api_key)}`);
+          p.log.info('已自动更新配置文件');
         } else if (keyResult.exists) {
-          // key 已存在，只有前缀
-          console.log(`  Desktop Key 已存在 (${keyResult.key_prefix})`);
-          console.log('  完整密钥仅首次创建时显示，请前往控制台查看或删除后重新创建。');
+          p.log.info(`Desktop Key 已存在 (${keyResult.key_prefix})`);
+          p.log.info('完整密钥仅首次创建时显示，请前往控制台查看或删除后重新创建。');
         }
       } catch (keyErr) {
-        console.log(`  获取 API Key 失败: ${keyErr instanceof Error ? keyErr.message : keyErr}`);
+        p.log.warn(`获取 API Key 失败: ${keyErr instanceof Error ? keyErr.message : keyErr}`);
       }
 
-      // 4. 显示套餐/试用状态
       await showAccountStatus(atClient);
-
-      console.log('');
+      p.outro('');
+      process.exit(0);
     } catch (error) {
-      console.error('登录失败:', error instanceof Error ? error.message : error);
-    } finally {
-      rl.close();
+      s.stop('登录失败');
+      p.log.error(error instanceof Error ? error.message : String(error));
+      process.exit(1);
     }
   });
 

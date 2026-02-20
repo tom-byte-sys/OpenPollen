@@ -38,7 +38,7 @@ export class MessageRouter {
   /**
    * 处理入站消息：查找/创建会话 → 路由到 Agent
    */
-  async handleMessage(message: InboundMessage, onChunk?: (text: string) => void): Promise<string> {
+  async handleMessage(message: InboundMessage, onChunk?: (text: string, type?: 'text' | 'thinking') => void): Promise<string> {
     // 检测命令
     const trimmed = (message.content.text ?? '').trim();
     if (trimmed === '/new') return this.handleNewSession(message);

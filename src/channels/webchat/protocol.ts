@@ -51,7 +51,7 @@ export interface ChatEventPayload {
   state: ChatEventState;
   message?: {
     role: 'assistant';
-    content: Array<{ type: 'text'; text: string }>;
+    content: Array<{ type: 'text'; text: string } | { type: 'thinking'; thinking: string }>;
   };
   errorMessage?: string;
 }
@@ -69,6 +69,9 @@ export interface ConnectParams {
   client?: {
     name?: string;
     version?: string;
+  };
+  device?: {
+    id?: string;
   };
 }
 

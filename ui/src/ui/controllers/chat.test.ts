@@ -10,6 +10,7 @@ function createState(overrides: Partial<ChatState> = {}): ChatState {
     chatRunId: null,
     chatSending: false,
     chatStream: null,
+    chatStreamThinking: null,
     chatStreamStartedAt: null,
     chatThinkingLevel: null,
     client: null,

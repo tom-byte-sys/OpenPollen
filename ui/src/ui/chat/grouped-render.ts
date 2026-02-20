@@ -76,12 +76,20 @@ export function renderStreamingGroup(
   startedAt: number,
   onOpenSidebar?: (content: string) => void,
   assistant?: AssistantIdentity,
+  thinkingText?: string | null,
+  showReasoning?: boolean,
 ) {
   const timestamp = new Date(startedAt).toLocaleTimeString([], {
     hour: "numeric",
     minute: "2-digit",
   });
   const name = assistant?.name ?? t('chat.assistant');
+
+  const content: Array<Record<string, unknown>> = [];
+  if (thinkingText && showReasoning) {
+    content.push({ type: "thinking", thinking: thinkingText });
+  }
+  content.push({ type: "text", text });
 
   return html`
     <div class="chat-group assistant">
@@ -90,10 +98,10 @@ export function renderStreamingGroup(
         ${renderGroupedMessage(
           {
             role: "assistant",
-            content: [{ type: "text", text }],
+            content,
             timestamp: startedAt,
           },
-          { isStreaming: true, showReasoning: false },
+          { isStreaming: true, showReasoning: showReasoning ?? false },
           onOpenSidebar,
         )}
         <div class="chat-group-footer">

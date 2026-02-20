@@ -11,6 +11,7 @@ import { eventFrame, type ChatEventPayload, type ChatEventState } from './protoc
  */
 export class StreamingController {
   private buffer = '';
+  private thinkingBuffer = '';
   private seq = 0;
   private throttleTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingFlush = false;
@@ -25,6 +26,12 @@ export class StreamingController {
   /** Push incremental text from the Agent SDK. */
   pushDelta(chunk: string): void {
     this.buffer += chunk;
+    this.scheduleSend();
+  }
+
+  /** Push incremental thinking text from the Agent SDK. */
+  pushThinkingDelta(chunk: string): void {
+    this.thinkingBuffer += chunk;
     this.scheduleSend();
   }
 
@@ -57,6 +64,11 @@ export class StreamingController {
   /** Get accumulated buffer text. */
   getBuffer(): string {
     return this.buffer;
+  }
+
+  /** Get accumulated thinking buffer text. */
+  getThinkingBuffer(): string {
+    return this.thinkingBuffer;
   }
 
   /** Clean up any pending timer. */
@@ -98,6 +110,11 @@ export class StreamingController {
 
   private send(state: ChatEventState): void {
     this.seq++;
+    const content: Array<{ type: 'text'; text: string } | { type: 'thinking'; thinking: string }> = [];
+    if (this.thinkingBuffer) {
+      content.push({ type: 'thinking', thinking: this.thinkingBuffer });
+    }
+    content.push({ type: 'text', text: this.buffer });
     const payload: ChatEventPayload = {
       runId: this.runId,
       sessionKey: this.sessionKey,
@@ -105,7 +122,7 @@ export class StreamingController {
       state,
       message: {
         role: 'assistant',
-        content: [{ type: 'text', text: this.buffer }],
+        content,
       },
     };
     this.safeSend(eventFrame('chat', payload, this.seq));

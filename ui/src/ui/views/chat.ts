@@ -34,6 +34,7 @@ export type ChatProps = {
   messages: unknown[];
   toolMessages: unknown[];
   stream: string | null;
+  streamThinking: string | null;
   streamStartedAt: number | null;
   assistantAvatarUrl?: string | null;
   draft: string;
@@ -192,7 +193,7 @@ export function renderChat(props: ChatProps) {
   const isBusy = props.sending || props.stream !== null;
   const canAbort = Boolean(props.canAbort && props.onAbort);
   const activeSession = props.sessions?.sessions?.find((row) => row.key === props.sessionKey);
-  const reasoningLevel = activeSession?.reasoningLevel ?? "off";
+  const reasoningLevel = activeSession?.reasoningLevel ?? "adaptive";
   const showReasoning = props.showThinking && reasoningLevel !== "off";
   const assistantIdentity = {
     name: props.assistantName,
@@ -246,6 +247,8 @@ export function renderChat(props: ChatProps) {
               item.startedAt,
               props.onOpenSidebar,
               assistantIdentity,
+              item.thinking,
+              showReasoning,
             );
           }
 
@@ -527,12 +530,14 @@ function buildChatItems(props: ChatProps): Array<ChatItem | MessageGroup> {
 
   if (props.stream !== null) {
     const key = `stream:${props.sessionKey}:${props.streamStartedAt ?? "live"}`;
-    if (props.stream.trim().length > 0) {
+    const hasContent = props.stream.trim().length > 0 || (props.streamThinking && props.streamThinking.trim().length > 0);
+    if (hasContent) {
       items.push({
         kind: "stream",
         key,
         text: props.stream,
         startedAt: props.streamStartedAt ?? Date.now(),
+        thinking: props.streamThinking,
       });
     } else {
       items.push({ kind: "reading-indicator", key });

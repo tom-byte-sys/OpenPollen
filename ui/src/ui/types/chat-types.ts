@@ -6,7 +6,7 @@
 export type ChatItem =
   | { kind: "message"; key: string; message: unknown }
   | { kind: "divider"; key: string; label: string; timestamp: number }
-  | { kind: "stream"; key: string; text: string; startedAt: number }
+  | { kind: "stream"; key: string; text: string; startedAt: number; thinking?: string | null }
   | { kind: "reading-indicator"; key: string };
 
 /** A group of consecutive messages from the same role (Slack-style layout) */

@@ -13,6 +13,7 @@ import { WebchatAdapter } from './channels/webchat/index.js';
 import { SqliteMemoryStore } from './memory/sqlite-store.js';
 import { FileMemoryStore } from './memory/file-store.js';
 import type { ChannelAdapter } from './channels/interface.js';
+import { CronScheduler } from './cron/scheduler.js';
 import type { MemoryStore } from './memory/interface.js';
 import type { AppConfig } from './config/schema.js';
 
@@ -73,10 +74,13 @@ export async function createOpenPollen(configPath?: string): Promise<OpenPollenI
   // 8. 初始化消息路由
   const router = new MessageRouter({ sessionManager, agentRunner, memory });
 
-  // 9. 初始化 Gateway
+  // 9. 初始化 Cron 调度器
+  const cronScheduler = new CronScheduler(memory, router);
+
+  // 10. 初始化 Gateway
   const server = new GatewayServer({ config: config.gateway, router });
 
-  // 10. 初始化 Channel 适配器
+  // 11. 初始化 Channel 适配器
   const channels: ChannelAdapter[] = [];
 
   if (config.channels.webchat?.enabled) {
@@ -94,12 +98,13 @@ export async function createOpenPollen(configPath?: string): Promise<OpenPollenI
         mainLog.info('配置已热重载');
       },
       skillManager,
+      cronScheduler,
     });
     channels.push(webchat);
     mainLog.info('WebChat Channel 已配置');
   }
 
-  // 11. 动态接入渠道插件
+  // 12. 动态接入渠道插件
   const channelPlugins = pluginRegistry.list('channel').filter(isChannelPlugin);
   for (const cp of channelPlugins) {
     cp.onMessage(async (msg, onChunk) => await router.handleMessage(msg, onChunk));
@@ -116,6 +121,9 @@ export async function createOpenPollen(configPath?: string): Promise<OpenPollenI
 
       // 启动 Gateway HTTP 服务
       await server.start();
+
+      // 启动 Cron 调度器
+      cronScheduler.start();
 
       // 启动所有 Channel
       for (const channel of channels) {
@@ -139,6 +147,9 @@ export async function createOpenPollen(configPath?: string): Promise<OpenPollenI
 
     async stop() {
       mainLog.info('OpenPollen 停止中...');
+
+      // 停止 Cron 调度器
+      cronScheduler.stop();
 
       // 停止所有插件
       await pluginRegistry.stopAll();

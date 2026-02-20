@@ -14,6 +14,7 @@ import type { SessionManager } from '../../gateway/session.js';
 import type { MemoryStore } from '../../memory/interface.js';
 import type { AppConfig } from '../../config/schema.js';
 import type { SkillManager } from '../../agent/skill-manager.js';
+import type { CronScheduler } from '../../cron/scheduler.js';
 import type { Server } from 'node:http';
 
 const log = getLogger('webchat');
@@ -56,6 +57,7 @@ export class WebchatAdapter implements ChannelAdapter {
   private configFilePath: string | null = null;
   private reloadConfig: (() => Promise<void>) = async () => {};
   private skillManager!: SkillManager;
+  private cronScheduler!: CronScheduler;
 
   // The onMessage handler from the ChannelAdapter interface (unused here
   // since we call router.handleMessage directly, but kept for interface compliance)
@@ -73,6 +75,7 @@ export class WebchatAdapter implements ChannelAdapter {
     configFilePath: string | null;
     reloadConfig: () => Promise<void>;
     skillManager: SkillManager;
+    cronScheduler: CronScheduler;
   }): void {
     this.router = deps.router;
     this.sessionManager = deps.sessionManager;
@@ -81,6 +84,7 @@ export class WebchatAdapter implements ChannelAdapter {
     this.configFilePath = deps.configFilePath;
     this.reloadConfig = deps.reloadConfig;
     this.skillManager = deps.skillManager;
+    this.cronScheduler = deps.cronScheduler;
   }
 
   async initialize(config: Record<string, unknown>): Promise<void> {
@@ -89,7 +93,7 @@ export class WebchatAdapter implements ChannelAdapter {
   }
 
   async start(): Promise<void> {
-    if (!this.router || !this.sessionManager || !this.memory) {
+    if (!this.router || !this.sessionManager || !this.memory || !this.cronScheduler) {
       throw new Error('WebchatAdapter: call inject() before start()');
     }
 
@@ -106,6 +110,7 @@ export class WebchatAdapter implements ChannelAdapter {
       reloadConfig: this.reloadConfig,
       getLastHeartbeatTs: () => this.lastTickTs,
       skillManager: this.skillManager,
+      cronScheduler: this.cronScheduler,
     };
     this.dispatcher = new RpcDispatcher(deps);
 
@@ -189,8 +194,8 @@ export class WebchatAdapter implements ChannelAdapter {
     log.info({ tempId }, 'New WebSocket connection, starting handshake');
 
     performHandshake(ws, SERVER_VERSION)
-      .then(({ connId, onFirstRequest }) => {
-        const userId = `webchat_${connId.slice(0, 8)}`;
+      .then(({ connId, deviceId, onFirstRequest }) => {
+        const userId = deviceId ? `webchat_${deviceId.slice(0, 12)}` : `webchat_${connId.slice(0, 8)}`;
         const client: ConnectedClient = {
           ws,
           connId,

@@ -228,6 +228,8 @@ export type Translations = {
   'sessions.channelSession': string;
   'sessions.group': string;
   'sessions.directMessage': string;
+  'sessions.deleteConfirmTitle': string;
+  'sessions.deleteConfirmMessage': string;
 
   // ── usage ───────────────────────────────────────
   'usage.title': string;
@@ -1312,6 +1314,46 @@ export type Translations = {
   'usage.estimatedFromSpans': string;
   'usage.tokensSuffix': string;
 
+  // ── usage (page-level hardcoded strings) ────────
+  'usage.pageSubtitle': string;
+  'usage.filtersTitle': string;
+  'usage.emptyHint': string;
+  'usage.presetToday': string;
+  'usage.preset7d': string;
+  'usage.preset30d': string;
+  'usage.pinned': string;
+  'usage.pin': string;
+  'usage.unpinFilters': string;
+  'usage.pinFilters': string;
+  'usage.exportMenu': string;
+  'usage.sessionsCsv': string;
+  'usage.dailyCsv': string;
+  'usage.jsonExport': string;
+  'usage.chartTokens': string;
+  'usage.chartCost': string;
+  'usage.filterTip': string;
+  'usage.sessionsLimitWarning': string;
+  'usage.tokensSuffixLabel': string;
+  'usage.costSuffixLabel': string;
+  'usage.sessionSingular': string;
+  'usage.sessionPlural': string;
+  'usage.shownTotal': string;
+  'usage.selectedCountLabel': string;
+  'usage.copySessionName': string;
+  'usage.copyButton': string;
+  'usage.outputBreakdown': string;
+  'usage.inputBreakdown': string;
+  'usage.cacheWriteBreakdown': string;
+  'usage.cacheReadBreakdown': string;
+  'usage.msgsCount': string;
+  'usage.ofInput': string;
+  'usage.systemContext': string;
+  'usage.skillsContext': string;
+  'usage.toolsContext': string;
+  'usage.filesContext': string;
+  'usage.moreCount': string;
+  'usage.filteredOfTotal': string;
+  'usage.allBadge': string;
 };
 
 export type TranslationKey = keyof Translations;

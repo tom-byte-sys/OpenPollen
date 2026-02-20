@@ -1,11 +1,12 @@
 import type { WebSocket } from 'ws';
 import type { RequestFrame, ResponseFrame } from './protocol.js';
 import { errorResponse } from './protocol.js';
-import { handleHealth, handleStatus, handleSkillsStatus, handleModelsList, handleLastHeartbeat } from './handlers/system.js';
-import { handleAgentsList, handleAgentsFilesList, handleAgentIdentityGet, handleChannelsStatus, handleCronList } from './handlers/agents.js';
+import { handleHealth, handleStatus, handleSkillsStatus, handleModelsList, handleLastHeartbeat, handleSystemPresence } from './handlers/system.js';
+import { handleAgentsList, handleAgentsFilesList, handleAgentIdentityGet, handleChannelsStatus } from './handlers/agents.js';
+import { handleCronStatus, handleCronList, handleCronAdd, handleCronUpdate, handleCronRun, handleCronRemove, handleCronRuns } from './handlers/cron.js';
 import { handleConfigGetFull, handleConfigSchema, handleConfigSet, handleConfigApply } from './handlers/config.js';
 import { handleLogsTail } from './handlers/logs.js';
-import { handleSessionsList, handleSessionsPatch } from './handlers/sessions.js';
+import { handleSessionsList, handleSessionsPatch, handleSessionsDelete } from './handlers/sessions.js';
 import { handleChatSend, handleChatHistory, handleChatAbort, type ChatSendParams } from './handlers/chat.js';
 import { AbortManager } from './abort-manager.js';
 import { ChatHistoryStore } from './history-store.js';
@@ -14,6 +15,7 @@ import type { SessionManager } from '../../gateway/session.js';
 import type { MemoryStore } from '../../memory/interface.js';
 import type { AppConfig } from '../../config/schema.js';
 import type { SkillManager } from '../../agent/skill-manager.js';
+import type { CronScheduler } from '../../cron/scheduler.js';
 import { getLogger } from '../../utils/logger.js';
 
 const log = getLogger('webchat:rpc');
@@ -29,6 +31,7 @@ export interface DispatcherDeps {
   reloadConfig: () => Promise<void>;
   getLastHeartbeatTs: () => number | null;
   skillManager: SkillManager;
+  cronScheduler: CronScheduler;
 }
 
 /**
@@ -70,10 +73,32 @@ export class RpcDispatcher {
         return handleAgentsFilesList(id);
 
       case 'channels.status':
-        return handleChannelsStatus(id);
+        return handleChannelsStatus(id, this.deps.appConfig);
+
+      case 'system-presence':
+        return handleSystemPresence(id);
+
+      // --- Cron ---
+      case 'cron.status':
+        return handleCronStatus(id, this.deps.cronScheduler);
 
       case 'cron.list':
-        return handleCronList(id);
+        return handleCronList(id, params as { includeDisabled?: boolean }, this.deps.cronScheduler);
+
+      case 'cron.add':
+        return handleCronAdd(id, params as Parameters<typeof handleCronAdd>[1], this.deps.cronScheduler);
+
+      case 'cron.update':
+        return handleCronUpdate(id, params as { id: string; patch: Record<string, unknown> }, this.deps.cronScheduler);
+
+      case 'cron.run':
+        return handleCronRun(id, params as { id: string; mode?: string }, this.deps.cronScheduler);
+
+      case 'cron.remove':
+        return handleCronRemove(id, params as { id: string }, this.deps.cronScheduler);
+
+      case 'cron.runs':
+        return handleCronRuns(id, params as { id: string; limit?: number }, this.deps.cronScheduler);
 
       // --- Config ---
       case 'config.get':
@@ -145,6 +170,16 @@ export class RpcDispatcher {
 
       case 'sessions.patch':
         return handleSessionsPatch(id);
+
+      case 'sessions.delete':
+        return handleSessionsDelete(
+          id,
+          params as { key?: string; deleteTranscript?: boolean },
+          this.deps.sessionManager,
+          this.deps.memory,
+          this.deps.historyStore,
+          userId,
+        );
 
       // --- Fallback ---
       default:

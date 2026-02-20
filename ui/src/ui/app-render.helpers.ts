@@ -57,6 +57,7 @@ function resetChatStateForSessionSwitch(state: AppViewState, sessionKey: string)
   state.sessionKey = sessionKey;
   state.chatMessage = "";
   state.chatStream = null;
+  state.chatStreamThinking = null;
   (state as unknown as OpenPollenApp).chatStreamStartedAt = null;
   state.chatRunId = null;
   (state as unknown as OpenPollenApp).resetToolStream();
@@ -159,6 +160,7 @@ export function renderChatControls(state: AppViewState) {
             state.sessionKey = next;
             state.chatMessage = "";
             state.chatStream = null;
+            state.chatStreamThinking = null;
             (state as unknown as OpenPollenApp).chatStreamStartedAt = null;
             state.chatRunId = null;
             (state as unknown as OpenPollenApp).resetToolStream();
@@ -402,7 +404,7 @@ function resolveSessionOptions(
   // Add sessions from the result
   if (sessions?.sessions) {
     for (const s of sessions.sessions) {
-      if (!seen.has(s.key)) {
+      if (s.key && !seen.has(s.key)) {
         seen.add(s.key);
         options.push({
           key: s.key,

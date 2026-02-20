@@ -1,6 +1,6 @@
 import type { GatewayBrowserClient } from "../gateway.ts";
 import type { ChatAttachment } from "../ui-types.ts";
-import { extractText } from "../chat/message-extract.ts";
+import { extractText, extractThinking } from "../chat/message-extract.ts";
 import { generateUUID } from "../uuid.ts";
 
 export type ChatState = {
@@ -15,6 +15,7 @@ export type ChatState = {
   chatAttachments: ChatAttachment[];
   chatRunId: string | null;
   chatStream: string | null;
+  chatStreamThinking: string | null;
   chatStreamStartedAt: number | null;
   lastError: string | null;
 };
@@ -117,6 +118,7 @@ export async function sendChatMessage(
   const runId = generateUUID();
   state.chatRunId = runId;
   state.chatStream = "";
+  state.chatStreamThinking = null;
   state.chatStreamStartedAt = now;
 
   // Convert attachments to API format
@@ -149,6 +151,7 @@ export async function sendChatMessage(
     const error = String(err);
     state.chatRunId = null;
     state.chatStream = null;
+    state.chatStreamThinking = null;
     state.chatStreamStartedAt = null;
     state.lastError = error;
     state.chatMessages = [
@@ -207,8 +210,13 @@ export function handleChatEvent(state: ChatState, payload?: ChatEventPayload) {
         state.chatStream = next;
       }
     }
+    const nextThinking = extractThinking(payload.message);
+    if (typeof nextThinking === "string") {
+      state.chatStreamThinking = nextThinking;
+    }
   } else if (payload.state === "final") {
     state.chatStream = null;
+    state.chatStreamThinking = null;
     state.chatRunId = null;
     state.chatStreamStartedAt = null;
   } else if (payload.state === "aborted") {
@@ -229,10 +237,12 @@ export function handleChatEvent(state: ChatState, payload?: ChatEventPayload) {
       }
     }
     state.chatStream = null;
+    state.chatStreamThinking = null;
     state.chatRunId = null;
     state.chatStreamStartedAt = null;
   } else if (payload.state === "error") {
     state.chatStream = null;
+    state.chatStreamThinking = null;
     state.chatRunId = null;
     state.chatStreamStartedAt = null;
     state.lastError = payload.errorMessage ?? "chat error";

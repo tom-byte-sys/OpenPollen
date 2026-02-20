@@ -67,6 +67,33 @@ export function handleModelsList(reqId: string, appConfig: AppConfig): ResponseF
   return okResponse(reqId, { models });
 }
 
+/**
+ * system-presence — returns current instance presence info.
+ */
+export function handleSystemPresence(reqId: string): ResponseFrame {
+  const hostname = typeof globalThis.process !== 'undefined' ? globalThis.process.env.HOSTNAME || 'localhost' : 'localhost';
+  const platform = typeof globalThis.process !== 'undefined' ? globalThis.process.platform : 'unknown';
+
+  return okResponse(reqId, [
+    {
+      instanceId: 'primary',
+      host: hostname,
+      ip: null,
+      version: '0.1.7',
+      platform,
+      deviceFamily: null,
+      modelIdentifier: null,
+      roles: ['gateway', 'agent'],
+      scopes: ['openpollen'],
+      mode: 'standalone',
+      lastInputSeconds: null,
+      reason: null,
+      text: null,
+      ts: Date.now(),
+    },
+  ]);
+}
+
 const HEARTBEAT_INTERVAL_MS = 30_000;
 
 export function handleLastHeartbeat(

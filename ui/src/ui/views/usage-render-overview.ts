@@ -75,16 +75,16 @@ function renderFilterChips(
       ((selectedSession.label || selectedSession.key).length > 20 ? "…" : "")
     : selectedSessions.length === 1
       ? selectedSessions[0].slice(0, 8) + "…"
-      : `${selectedSessions.length} sessions`;
+      : `${selectedSessions.length} ${t('usage.sessionPlural')}`;
   const sessionsFullName = selectedSession
     ? selectedSession.label || selectedSession.key
     : selectedSessions.length === 1
       ? selectedSessions[0]
       : selectedSessions.join(", ");
 
-  const daysLabel = selectedDays.length === 1 ? selectedDays[0] : `${selectedDays.length} days`;
+  const daysLabel = selectedDays.length === 1 ? selectedDays[0] : String(selectedDays.length);
   const hoursLabel =
-    selectedHours.length === 1 ? `${selectedHours[0]}:00` : `${selectedHours.length} hours`;
+    selectedHours.length === 1 ? `${selectedHours[0]}:00` : String(selectedHours.length);
 
   return html`
     <div class="active-filters">
@@ -205,16 +205,16 @@ function renderDailyChartCompact(
               dailyChartMode === "by-type"
                 ? isTokenMode
                   ? [
-                      `Output ${formatTokens(d.output)}`,
-                      `Input ${formatTokens(d.input)}`,
-                      `Cache write ${formatTokens(d.cacheWrite)}`,
-                      `Cache read ${formatTokens(d.cacheRead)}`,
+                      t('usage.outputBreakdown', { value: formatTokens(d.output) }),
+                      t('usage.inputBreakdown', { value: formatTokens(d.input) }),
+                      t('usage.cacheWriteBreakdown', { value: formatTokens(d.cacheWrite) }),
+                      t('usage.cacheReadBreakdown', { value: formatTokens(d.cacheRead) }),
                     ]
                   : [
-                      `Output ${formatCost(d.outputCost ?? 0)}`,
-                      `Input ${formatCost(d.inputCost ?? 0)}`,
-                      `Cache write ${formatCost(d.cacheWriteCost ?? 0)}`,
-                      `Cache read ${formatCost(d.cacheReadCost ?? 0)}`,
+                      t('usage.outputBreakdown', { value: formatCost(d.outputCost ?? 0) }),
+                      t('usage.inputBreakdown', { value: formatCost(d.inputCost ?? 0) }),
+                      t('usage.cacheWriteBreakdown', { value: formatCost(d.cacheWriteCost ?? 0) }),
+                      t('usage.cacheReadBreakdown', { value: formatCost(d.cacheReadCost ?? 0) }),
                     ]
                 : [];
             const totalLabel = isTokenMode ? formatTokens(d.totalTokens) : formatCost(d.totalCost);
@@ -251,7 +251,7 @@ function renderDailyChartCompact(
                 <div class="daily-bar-label" style="${labelStyle}">${shortLabel}</div>
                 <div class="daily-bar-tooltip">
                   <strong>${formatFullDate(d.date)}</strong><br />
-                  ${formatTokens(d.totalTokens)} tokens<br />
+                  ${formatTokens(d.totalTokens)} ${t('usage.tokensSuffix')}<br />
                   ${formatCost(d.totalCost)}
                   ${
                     breakdownLines.length
@@ -398,13 +398,13 @@ function renderUsageInsights(
     stats.durationCount > 0
       ? (formatDurationCompact(stats.avgDurationMs, { spaced: true }) ?? "—")
       : "—";
-  const cacheHint = "Cache hit rate = cache read / (input + cache read). Higher is better.";
-  const errorHint = "Error rate = errors / total messages. Lower is better.";
-  const throughputHint = "Throughput shows tokens per minute over active time. Higher is better.";
-  const tokensHint = "Average tokens per message in this range.";
+  const cacheHint = t('usage.cacheHitHint');
+  const errorHint = t('usage.errorRateHint');
+  const throughputHint = t('usage.throughputHintText');
+  const tokensHint = t('usage.tokensHintText');
   const costHint = showCostHint
-    ? "Average cost per message when providers report costs. Cost data is missing for some or all sessions in this range."
-    : "Average cost per message when providers report costs.";
+    ? t('usage.costHintMissing')
+    : t('usage.costHint');
 
   const errorDays = aggregates.daily
     .filter((day) => day.messages > 0 && day.errors > 0)
@@ -413,7 +413,7 @@ function renderUsageInsights(
       return {
         label: formatDayLabel(day.date),
         value: `${(rate * 100).toFixed(2)}%`,
-        sub: `${day.errors} errors · ${day.messages} msgs · ${formatTokens(day.tokens)}`,
+        sub: `${day.errors} ${t('usage.errorsLower')} · ${t('usage.msgsCount', { count: String(day.messages) })} · ${formatTokens(day.tokens)}`,
         rate,
       };
     })
@@ -424,17 +424,17 @@ function renderUsageInsights(
   const topModels = aggregates.byModel.slice(0, 5).map((entry) => ({
     label: entry.model ?? "unknown",
     value: formatCost(entry.totals.totalCost),
-    sub: `${formatTokens(entry.totals.totalTokens)} · ${entry.count} msgs`,
+    sub: `${formatTokens(entry.totals.totalTokens)} · ${t('usage.msgsCount', { count: String(entry.count) })}`,
   }));
   const topProviders = aggregates.byProvider.slice(0, 5).map((entry) => ({
     label: entry.provider ?? "unknown",
     value: formatCost(entry.totals.totalCost),
-    sub: `${formatTokens(entry.totals.totalTokens)} · ${entry.count} msgs`,
+    sub: `${formatTokens(entry.totals.totalTokens)} · ${t('usage.msgsCount', { count: String(entry.count) })}`,
   }));
   const topTools = aggregates.tools.tools.slice(0, 6).map((tool) => ({
     label: tool.name,
     value: `${tool.count}`,
-    sub: "calls",
+    sub: t('usage.calls'),
   }));
   const topAgents = aggregates.byAgent.slice(0, 5).map((entry) => ({
     label: entry.agentId,
@@ -668,13 +668,13 @@ function renderSessionsCard(
         <div class="session-bar-actions">
           <button
             class="session-copy-btn"
-            title="Copy session name"
+            title="${t('usage.copySessionName')}"
             @click=${(e: MouseEvent) => {
               e.stopPropagation();
               void copySessionName(s);
             }}
           >
-            Copy
+            ${t('usage.copyButton')}
           </button>
           <div class="session-bar-value">${isTokenMode ? formatTokens(value) : formatCost(value)}</div>
         </div>
@@ -695,7 +695,7 @@ function renderSessionsCard(
       <div class="sessions-card-header">
         <div class="card-title">${t('usage.sessionsCardTitle')}</div>
         <div class="sessions-card-count">
-          ${sessions.length} shown${totalSessions !== sessions.length ? ` · ${totalSessions} total` : ""}
+          ${totalSessions !== sessions.length ? t('usage.shownTotal', { shown: String(sessions.length), total: String(totalSessions) }) : `${sessions.length} ${t('usage.shown')}`}
         </div>
       </div>
       <div class="sessions-card-meta">
@@ -774,7 +774,7 @@ function renderSessionsCard(
         selectedCount > 1
           ? html`
               <div style="margin-top: 10px;">
-                <div class="sessions-card-count">Selected (${selectedCount})</div>
+                <div class="sessions-card-count">${t('usage.selectedCountLabel', { count: String(selectedCount) })}</div>
                 <div class="session-bars" style="max-height: 160px; margin-top: 6px;">
                   ${selectedEntries.map((s) => renderSessionBarRow(s, true))}
                 </div>

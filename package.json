@@ -1,6 +1,6 @@
 {
   "name": "openpollen",
-  "version": "0.1.4",
+  "version": "0.1.7",
   "description": "安全、易用、可扩展的开源 AI Agent 框架",
   "type": "module",
   "main": "dist/index.js",
@@ -43,6 +43,7 @@
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.42",
+    "@clack/prompts": "^1.0.1",
     "@sinclair/typebox": "^0.34.0",
     "commander": "^13.0.0",
     "dingtalk-stream": "^2.1.4",

@@ -68,9 +68,13 @@ export function handleChatSend(
   // Fire-and-forget: run the agent asynchronously
   (async () => {
     try {
-      const onChunk = (chunk: string) => {
+      const onChunk = (chunk: string, type?: 'text' | 'thinking') => {
         if (abortManager.isAborted(runId)) return;
-        stream.pushDelta(chunk);
+        if (type === 'thinking') {
+          stream.pushThinkingDelta(chunk);
+        } else {
+          stream.pushDelta(chunk);
+        }
         abortManager.appendBuffer(runId, stream.getBuffer());
       };
 
@@ -82,9 +86,15 @@ export function handleChatSend(
         stream.sendFinal();
 
         // Store assistant message
+        const assistantContent: StoredMessage['content'] = [];
+        const thinkingText = stream.getThinkingBuffer();
+        if (thinkingText) {
+          assistantContent.push({ type: 'thinking', thinking: thinkingText });
+        }
+        assistantContent.push({ type: 'text', text: stream.getBuffer() });
         const assistantMsg: StoredMessage = {
           role: 'assistant',
-          content: [{ type: 'text', text: stream.getBuffer() }],
+          content: assistantContent,
           timestamp: Date.now(),
           runId,
         };

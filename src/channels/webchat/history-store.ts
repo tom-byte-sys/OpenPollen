@@ -2,7 +2,7 @@ import type { MemoryStore } from '../../memory/interface.js';
 
 export interface StoredMessage {
   role: 'user' | 'assistant';
-  content: Array<{ type: 'text'; text: string }>;
+  content: Array<{ type: string; text?: string; thinking?: string }>;
   timestamp: number;
   runId?: string;
 }
@@ -24,6 +24,12 @@ export class ChatHistoryStore {
     this.seqCounters.set(namespace, seq);
     const key = `msg:${msg.timestamp}:${String(seq).padStart(6, '0')}`;
     await this.memory.set(namespace, key, JSON.stringify(msg));
+  }
+
+  async clearHistory(sessionKey: string): Promise<void> {
+    const namespace = `chat-history:${sessionKey}`;
+    await this.memory.clear(namespace);
+    this.seqCounters.delete(namespace);
   }
 
   async getHistory(sessionKey: string, limit = 100): Promise<StoredMessage[]> {

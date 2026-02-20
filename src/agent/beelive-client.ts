@@ -2,7 +2,7 @@ import { getLogger } from '../utils/logger.js';
 
 const log = getLogger('beelive-client');
 
-const DEFAULT_BASE_URL = process.env.BEELIVE_API_URL || 'https://api.openpollen.dev/api/v1';
+const DEFAULT_BASE_URL = process.env.BEELIVE_API_URL || 'https://lite.beebywork.com/api/v1';
 
 export interface AuthResponse {
   access_token: string;
@@ -45,6 +45,19 @@ export interface Subscription {
     requests_per_minute: number;
     requests_per_day: number;
   };
+}
+
+export interface CliAuthStartResponse {
+  session_id: string;
+  auth_url: string;
+  expires_in: number;
+}
+
+export interface CliAuthPollResponse {
+  status: 'pending' | 'completed';
+  token?: string;
+  email?: string;
+  api_key?: string;
 }
 
 export class BeeliveClient {
@@ -188,6 +201,39 @@ export class BeeliveClient {
     }
 
     return response.json() as Promise<UserInfo>;
+  }
+
+  /**
+   * POST /auth/cli-auth/start — 发起 CLI 浏览器认证
+   */
+  async startCliAuth(): Promise<CliAuthStartResponse> {
+    const url = `${this.baseUrl}/auth/cli-auth/start`;
+    log.debug({ url }, 'startCliAuth');
+
+    const response = await fetch(url, { method: 'POST' });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({})) as { detail?: string };
+      throw new Error(data.detail || `发起认证失败 (${response.status})`);
+    }
+
+    return response.json() as Promise<CliAuthStartResponse>;
+  }
+
+  /**
+   * GET /auth/cli-auth/poll — 轮询 CLI 认证状态
+   */
+  async pollCliAuth(sessionId: string): Promise<CliAuthPollResponse> {
+    const url = `${this.baseUrl}/auth/cli-auth/poll?session_id=${encodeURIComponent(sessionId)}`;
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({})) as { detail?: string };
+      throw new Error(data.detail || `轮询认证状态失败 (${response.status})`);
+    }
+
+    return response.json() as Promise<CliAuthPollResponse>;
   }
 }
 

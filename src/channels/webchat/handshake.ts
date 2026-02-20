@@ -22,6 +22,7 @@ const SUPPORTED_METHODS = [
   'chat.abort',
   'sessions.list',
   'sessions.patch',
+  'sessions.delete',
   'health',
   'status',
   'config.get',
@@ -37,9 +38,15 @@ const SUPPORTED_METHODS = [
   'agent.identity.get',
   'channels.status',
   'cron.list',
+  'cron.status',
+  'cron.add',
+  'cron.update',
+  'cron.run',
+  'cron.remove',
+  'cron.runs',
 ];
 
-const SUPPORTED_EVENTS = ['chat', 'tick'];
+const SUPPORTED_EVENTS = ['chat', 'tick', 'cron'];
 
 /**
  * Runs the OpenPollen handshake on a newly-connected WebSocket.
@@ -53,7 +60,7 @@ const SUPPORTED_EVENTS = ['chat', 'tick'];
 export function performHandshake(
   ws: WebSocket,
   serverVersion: string,
-): Promise<{ connId: string; onFirstRequest: (handler: (frame: RequestFrame) => void) => void }> {
+): Promise<{ connId: string; deviceId: string | null; onFirstRequest: (handler: (frame: RequestFrame) => void) => void }> {
   return new Promise((resolve, reject) => {
     const connId = randomUUID();
     const nonce = randomUUID();
@@ -129,9 +136,11 @@ export function performHandshake(
             }
           });
 
-          log.info({ connId }, 'WebChat handshake completed');
+          const deviceId = typeof params.device?.id === 'string' && params.device.id ? params.device.id : null;
+          log.info({ connId, deviceId }, 'WebChat handshake completed');
           resolve({
             connId,
+            deviceId,
             onFirstRequest: (handler) => {
               requestHandler = handler;
               if (bufferedFrame) {

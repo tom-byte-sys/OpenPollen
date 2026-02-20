@@ -343,9 +343,9 @@ export function renderUsage(props: UsageProps) {
           0
       : false);
   const datePresets = [
-    { label: "Today", days: 1 },
-    { label: "7d", days: 7 },
-    { label: "30d", days: 30 },
+    { label: t('usage.presetToday'), days: 1 },
+    { label: t('usage.preset7d'), days: 7 },
+    { label: t('usage.preset30d'), days: 30 },
   ];
   const applyPreset = (days: number) => {
     const end = new Date();
@@ -387,7 +387,7 @@ export function renderUsage(props: UsageProps) {
             selectedCount > 0
               ? html`<span class="usage-filter-badge">${selectedCount}</span>`
               : html`
-                  <span class="usage-filter-badge">All</span>
+                  <span class="usage-filter-badge">${t('usage.allBadge')}</span>
                 `
           }
         </summary>
@@ -402,7 +402,7 @@ export function renderUsage(props: UsageProps) {
               }}
               ?disabled=${allSelected}
             >
-              Select All
+              ${t('common.selectAll')}
             </button>
             <button
               class="btn btn-sm"
@@ -449,14 +449,14 @@ export function renderUsage(props: UsageProps) {
     <style>${usageStylesString}</style>
 
     <section class="usage-page-header">
-      <div class="usage-page-title">Usage</div>
-      <div class="usage-page-subtitle">See where tokens go, when sessions spike, and what drives cost.</div>
+      <div class="usage-page-title">${t('usage.title')}</div>
+      <div class="usage-page-subtitle">${t('usage.pageSubtitle')}</div>
     </section>
 
     <section class="card usage-header ${props.headerPinned ? "pinned" : ""}">
       <div class="usage-header-row">
         <div class="usage-header-title">
-          <div class="card-title" style="margin: 0;">Filters</div>
+          <div class="card-title" style="margin: 0;">${t('usage.filtersTitle')}</div>
           ${
             props.loading
               ? html`
@@ -467,7 +467,7 @@ export function renderUsage(props: UsageProps) {
           ${
             isEmpty
               ? html`
-                  <span class="usage-query-hint">Select a date range and click Refresh to load usage.</span>
+                  <span class="usage-query-hint">${t('usage.emptyHint')}</span>
                 `
               : nothing
           }
@@ -477,24 +477,24 @@ export function renderUsage(props: UsageProps) {
             displayTotals
               ? html`
                 <span class="usage-metric-badge">
-                  <strong>${formatTokens(displayTotals.totalTokens)}</strong> tokens
+                  <strong>${formatTokens(displayTotals.totalTokens)}</strong> ${t('usage.tokensSuffixLabel')}
                 </span>
                 <span class="usage-metric-badge">
-                  <strong>${formatCost(displayTotals.totalCost)}</strong> cost
+                  <strong>${formatCost(displayTotals.totalCost)}</strong> ${t('usage.costSuffixLabel')}
                 </span>
                 <span class="usage-metric-badge">
                   <strong>${displaySessionCount}</strong>
-                  session${displaySessionCount !== 1 ? "s" : ""}
+                  ${displaySessionCount !== 1 ? t('usage.sessionPlural') : t('usage.sessionSingular')}
                 </span>
               `
               : nothing
           }
           <button
             class="usage-pin-btn ${props.headerPinned ? "active" : ""}"
-            title=${props.headerPinned ? "Unpin filters" : "Pin filters"}
+            title=${props.headerPinned ? t('usage.unpinFilters') : t('usage.pinFilters')}
             @click=${props.onToggleHeaderPinned}
           >
-            ${props.headerPinned ? "Pinned" : "Pin"}
+            ${props.headerPinned ? t('usage.pinned') : t('usage.pin')}
           </button>
           <details
             class="usage-export-menu"
@@ -513,7 +513,7 @@ export function renderUsage(props: UsageProps) {
               window.addEventListener("click", onClick, true);
             }}
           >
-            <summary class="usage-export-button">Export ▾</summary>
+            <summary class="usage-export-button">${t('usage.exportMenu')}</summary>
             <div class="usage-export-popover">
               <div class="usage-export-list">
                 <button
@@ -526,7 +526,7 @@ export function renderUsage(props: UsageProps) {
                     )}
                   ?disabled=${filteredSessions.length === 0}
                 >
-                  Sessions CSV
+                  ${t('usage.sessionsCsv')}
                 </button>
                 <button
                   class="usage-export-item"
@@ -538,7 +538,7 @@ export function renderUsage(props: UsageProps) {
                     )}
                   ?disabled=${filteredDaily.length === 0}
                 >
-                  Daily CSV
+                  ${t('usage.dailyCsv')}
                 </button>
                 <button
                   class="usage-export-item"
@@ -559,7 +559,7 @@ export function renderUsage(props: UsageProps) {
                     )}
                   ?disabled=${filteredSessions.length === 0 && filteredDaily.length === 0}
                 >
-                  JSON
+                  ${t('usage.jsonExport')}
                 </button>
               </div>
             </div>
@@ -614,13 +614,13 @@ export function renderUsage(props: UsageProps) {
               class="toggle-btn ${isTokenMode ? "active" : ""}"
               @click=${() => props.onChartModeChange("tokens")}
             >
-              Tokens
+              ${t('usage.chartTokens')}
             </button>
             <button
               class="toggle-btn ${!isTokenMode ? "active" : ""}"
               @click=${() => props.onChartModeChange("cost")}
             >
-              Cost
+              ${t('usage.chartCost')}
             </button>
           </div>
           <button
@@ -628,7 +628,7 @@ export function renderUsage(props: UsageProps) {
             @click=${props.onRefresh}
             ?disabled=${props.loading}
           >
-            Refresh
+            ${t('common.refresh')}
           </button>
         </div>
         
@@ -672,13 +672,13 @@ export function renderUsage(props: UsageProps) {
           </div>
         </div>
         <div class="usage-filter-row">
-          ${renderFilterSelect("agent", "Agent", agentOptions)}
-          ${renderFilterSelect("channel", "Channel", channelOptions)}
-          ${renderFilterSelect("provider", "Provider", providerOptions)}
-          ${renderFilterSelect("model", "Model", modelOptions)}
-          ${renderFilterSelect("tool", "Tool", toolOptions)}
+          ${renderFilterSelect("agent", t('usage.agent'), agentOptions)}
+          ${renderFilterSelect("channel", t('usage.channel'), channelOptions)}
+          ${renderFilterSelect("provider", t('usage.provider'), providerOptions)}
+          ${renderFilterSelect("model", t('usage.model'), modelOptions)}
+          ${renderFilterSelect("tool", t('usage.tools'), toolOptions)}
           <span class="usage-query-hint">
-            Tip: use filters or click bars to filter days.
+            ${t('usage.filterTip')}
           </span>
         </div>
         ${
@@ -746,7 +746,7 @@ export function renderUsage(props: UsageProps) {
         props.sessionsLimitReached
           ? html`
               <div class="callout warning" style="margin-top: 12px">
-                Showing first 1,000 sessions. Narrow date range for complete results.
+                ${t('usage.sessionsLimitWarning')}
               </div>
             `
           : nothing

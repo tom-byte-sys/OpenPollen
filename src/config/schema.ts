@@ -106,7 +106,7 @@ export const LoggingConfigSchema = Type.Object({
 });
 
 export const MarketplaceConfigSchema = Type.Object({
-  apiUrl: Type.String({ default: process.env.BEELIVE_MARKETPLACE_URL || 'https://api.openpollen.dev/api/v1/skills-market' }),
+  apiUrl: Type.String({ default: process.env.BEELIVE_MARKETPLACE_URL || 'https://lite.beebywork.com/api/v1/skills-market' }),
 });
 
 export const AppConfigSchema = Type.Object({

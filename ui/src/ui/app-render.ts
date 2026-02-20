@@ -43,7 +43,7 @@ import {
 import { loadLogs } from "./controllers/logs.ts";
 import { loadNodes } from "./controllers/nodes.ts";
 import { loadPresence } from "./controllers/presence.ts";
-import { deleteSession, loadSessions, patchSession } from "./controllers/sessions.ts";
+import { requestDeleteSession, cancelDeleteSession, confirmDeleteSession, loadSessions, patchSession } from "./controllers/sessions.ts";
 import {
   installSkill,
   loadSkills,
@@ -328,7 +328,29 @@ export function renderApp(state: AppViewState) {
                 },
                 onRefresh: () => loadSessions(state),
                 onPatch: (key, patch) => patchSession(state, key, patch),
-                onDelete: (key) => deleteSession(state, key),
+                onDelete: (key) => requestDeleteSession(state, key),
+                deleteConfirmKey: state.sessionsDeleteConfirmKey,
+                onDeleteConfirm: () => confirmDeleteSession(state),
+                onDeleteCancel: () => cancelDeleteSession(state),
+                onSessionClick: (key) => {
+                  state.sessionKey = key;
+                  state.chatMessage = "";
+                  state.chatAttachments = [];
+                  state.chatStream = null;
+                  state.chatStreamThinking = null;
+                  state.chatStreamStartedAt = null;
+                  state.chatRunId = null;
+                  state.chatQueue = [];
+                  state.resetToolStream();
+                  state.resetChatScroll();
+                  state.applySettings({
+                    ...state.settings,
+                    sessionKey: key,
+                    lastActiveSessionKey: key,
+                  });
+                  void state.loadAssistantIdentity();
+                  state.setTab("chat");
+                },
               })
             : nothing
         }
@@ -820,6 +842,7 @@ export function renderApp(state: AppViewState) {
                   state.chatMessage = "";
                   state.chatAttachments = [];
                   state.chatStream = null;
+                  state.chatStreamThinking = null;
                   state.chatStreamStartedAt = null;
                   state.chatRunId = null;
                   state.chatQueue = [];
@@ -843,6 +866,7 @@ export function renderApp(state: AppViewState) {
                 messages: state.chatMessages,
                 toolMessages: state.chatToolMessages,
                 stream: state.chatStream,
+                streamThinking: state.chatStreamThinking,
                 streamStartedAt: state.chatStreamStartedAt,
                 draft: state.chatMessage,
                 queue: state.chatQueue,
@@ -873,7 +897,12 @@ export function renderApp(state: AppViewState) {
                 canAbort: Boolean(state.chatRunId),
                 onAbort: () => void state.handleAbortChat(),
                 onQueueRemove: (id) => state.removeQueuedMessage(id),
-                onNewSession: () => state.handleSendChat("/new", { restoreDraft: true }),
+                onNewSession: () => {
+                  state.handleSendChat("/new", { restoreDraft: true });
+                  // Clear local chat messages so the UI starts fresh
+                  state.chatMessages = [];
+                  state.chatToolMessages = [];
+                },
                 showNewMessages: state.chatNewMessagesBelow && !state.chatManualRefreshInFlight,
                 onScrollToBottom: () => state.scrollToBottom(),
                 // Sidebar props for tool output viewing

@@ -372,6 +372,12 @@
   border-color: rgba(255, 255, 255, 0.2);
 }
 
+.btn--icon.active {
+  background: var(--accent-subtle);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* Light theme icon button overrides */
 :root[data-theme="light"] .btn--icon {
   background: #ffffff;
@@ -384,6 +390,12 @@
   background: #ffffff;
   border-color: var(--border-strong);
   color: var(--text);
+}
+
+:root[data-theme="light"] .btn--icon.active {
+  background: var(--accent-subtle);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .btn--icon svg {

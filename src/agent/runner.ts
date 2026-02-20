@@ -8,7 +8,7 @@ import { SkillManager } from './skill-manager.js';
 
 const log = getLogger('agent-runner');
 
-const BEELIVE_PROXY_URL = process.env.BEELIVE_PROXY_URL || 'https://api.openpollen.dev/api/v1/anthropic-proxy';
+const BEELIVE_PROXY_URL = process.env.BEELIVE_PROXY_URL || 'https://lite.beebywork.com/api/v1/anthropic-proxy';
 
 export interface AgentRunnerOptions {
   config: AppConfig;
@@ -35,7 +35,7 @@ interface SDKMessage {
   session_id?: string;
   // assistant 消息
   message?: {
-    content: Array<{ type: string; text?: string; name?: string }>;
+    content: Array<{ type: string; text?: string; thinking?: string; name?: string }>;
   };
   // result 消息
   subType?: string;
@@ -61,7 +61,7 @@ export class AgentRunner {
   /**
    * 运行 Agent 处理用户消息
    */
-  async run(session: Session, userMessage: string, onChunk?: (text: string) => void): Promise<string> {
+  async run(session: Session, userMessage: string, onChunk?: (text: string, type?: 'text' | 'thinking') => void): Promise<string> {
     log.info({
       sessionId: session.id,
       messageLength: userMessage.length,
@@ -107,7 +107,7 @@ export class AgentRunner {
     }
   }
 
-  private async runWithSDK(sdk: ClaudeAgentSDK, session: Session, userMessage: string, onChunk?: (text: string) => void): Promise<string> {
+  private async runWithSDK(sdk: ClaudeAgentSDK, session: Session, userMessage: string, onChunk?: (text: string, type?: 'text' | 'thinking') => void): Promise<string> {
     const { config, skillManager } = this;
     const skillsDir = skillManager['skillsDir'];
 
@@ -123,6 +123,7 @@ export class AgentRunner {
       permissionMode: 'bypassPermissions',
       allowDangerouslySkipPermissions: true,
       includePartialMessages: true,
+      thinking: { type: 'adaptive' },
       env: {
         ...process.env,
         ...this.resolveProviderEnv(),
@@ -166,6 +167,8 @@ export class AgentRunner {
     const result = sdk.query({ prompt: userMessage, options });
     let responseText = '';
     const toolsUsed: string[] = [];
+    let streamChunks = 0;
+    let thinkingChunks = 0;
 
     for await (const message of result) {
       // 系统初始化消息
@@ -201,7 +204,11 @@ export class AgentRunner {
         if (event?.type === 'content_block_delta') {
           const delta = event.delta as Record<string, unknown> | undefined;
           if (delta?.type === 'text_delta' && typeof delta.text === 'string') {
-            onChunk(delta.text);
+            streamChunks++;
+            onChunk(delta.text, 'text');
+          } else if (delta?.type === 'thinking_delta' && typeof delta.thinking === 'string') {
+            thinkingChunks++;
+            onChunk(delta.thinking, 'thinking');
           }
         }
       }
@@ -219,7 +226,7 @@ export class AgentRunner {
           }
 
           // 更新会话历史
-          await this.updateSessionHistory(session.userId, message.session_id, userMessage);
+          await this.updateSessionHistory(session.userId, message.session_id, userMessage, session.channelId);
         }
         session.totalCostUsd += message.total_cost_usd ?? 0;
 
@@ -243,6 +250,8 @@ export class AgentRunner {
       responseLength: responseText.length,
       totalCost: session.totalCostUsd,
       toolsUsed,
+      streamChunks,
+      thinkingChunks,
     }, '消息处理完成 (SDK)');
 
     return responseText;
@@ -251,21 +260,25 @@ export class AgentRunner {
   /**
    * 创建或更新会话历史条目
    */
-  private async updateSessionHistory(userId: string, sdkSessionId: string, userMessage: string): Promise<void> {
+  private async updateSessionHistory(userId: string, sdkSessionId: string, userMessage: string, channelId: string): Promise<void> {
     const historyNamespace = `sdk-session-history:${userId}`;
     try {
       const existing = await this.memory.get(historyNamespace, sdkSessionId);
       const now = Date.now();
 
       if (existing) {
-        // 已存在：更新 lastActiveAt
-        const data = JSON.parse(existing) as { sdkSessionId: string; createdAt: number; lastActiveAt: number; preview: string };
+        // 已存在：更新 lastActiveAt，补充 channelId（兼容旧数据）
+        const data = JSON.parse(existing) as { sdkSessionId: string; createdAt: number; lastActiveAt: number; preview: string; channelId?: string };
         data.lastActiveAt = now;
+        if (!data.channelId) {
+          data.channelId = channelId;
+        }
         await this.memory.set(historyNamespace, sdkSessionId, JSON.stringify(data));
       } else {
         // 首次创建：preview 取用户消息前 50 字符
         const entry = {
           sdkSessionId,
+          channelId,
           createdAt: now,
           lastActiveAt: now,
           preview: userMessage.slice(0, 50),

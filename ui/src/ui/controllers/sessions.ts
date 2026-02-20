@@ -12,6 +12,7 @@ export type SessionsState = {
   sessionsFilterLimit: string;
   sessionsIncludeGlobal: boolean;
   sessionsIncludeUnknown: boolean;
+  sessionsDeleteConfirmKey: string | null;
 };
 
 export async function loadSessions(
@@ -91,19 +92,23 @@ export async function patchSession(
   }
 }
 
-export async function deleteSession(state: SessionsState, key: string) {
-  if (!state.client || !state.connected) {
+/** Show the delete confirmation dialog. */
+export function requestDeleteSession(state: SessionsState, key: string) {
+  state.sessionsDeleteConfirmKey = key;
+}
+
+/** Cancel the pending delete. */
+export function cancelDeleteSession(state: SessionsState) {
+  state.sessionsDeleteConfirmKey = null;
+}
+
+/** Execute the confirmed delete. */
+export async function confirmDeleteSession(state: SessionsState) {
+  const key = state.sessionsDeleteConfirmKey;
+  if (!key || !state.client || !state.connected) {
     return;
   }
-  if (state.sessionsLoading) {
-    return;
-  }
-  const confirmed = window.confirm(
-    `Delete session "${key}"?\n\nDeletes the session entry and archives its transcript.`,
-  );
-  if (!confirmed) {
-    return;
-  }
+  state.sessionsDeleteConfirmKey = null;
   state.sessionsLoading = true;
   state.sessionsError = null;
   try {

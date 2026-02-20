@@ -35,19 +35,41 @@ export function handleAgentsFilesList(reqId: string): ResponseFrame {
 }
 
 /**
- * channels.status — stub returning empty channel list.
- * Placeholder for future channel status reporting.
+ * channels.status — returns channel status based on actual configuration.
  */
-export function handleChannelsStatus(reqId: string): ResponseFrame {
-  return okResponse(reqId, { channels: [] });
-}
+export function handleChannelsStatus(reqId: string, appConfig: AppConfig): ResponseFrame {
+  const channels: Record<string, { configured: boolean; running: boolean; connected: boolean }> = {};
+  const channelOrder: string[] = [];
 
-/**
- * cron.list — stub returning empty cron job list.
- * Placeholder for future scheduled task management.
- */
-export function handleCronList(reqId: string): ResponseFrame {
-  return okResponse(reqId, { jobs: [] });
+  const channelsConfig = appConfig.channels;
+
+  if (channelsConfig.webchat?.enabled) {
+    channels.webchat = { configured: true, running: true, connected: true };
+    channelOrder.push('webchat');
+  }
+
+  if (channelsConfig.dingtalk?.enabled) {
+    channels.dingtalk = { configured: true, running: true, connected: true };
+    channelOrder.push('dingtalk');
+  }
+
+  if (channelsConfig.wechat?.enabled) {
+    channels.wechat = { configured: true, running: true, connected: true };
+    channelOrder.push('wechat');
+  }
+
+  return okResponse(reqId, {
+    channels,
+    channelOrder,
+    channelLabels: {
+      webchat: 'WebChat',
+      dingtalk: 'DingTalk',
+      wechat: 'WeChat',
+    },
+    channelAccounts: {},
+    channelDefaultAccountId: {},
+    ts: Date.now(),
+  });
 }
 
 /**
