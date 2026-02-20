@@ -1,12 +1,13 @@
 import type { WebSocket } from 'ws';
 import type { RequestFrame, ResponseFrame } from './protocol.js';
-import { errorResponse } from './protocol.js';
-import { handleHealth, handleStatus, handleSkillsStatus, handleModelsList, handleLastHeartbeat, handleSystemPresence } from './handlers/system.js';
+import { errorResponse, okResponse } from './protocol.js';
+import { handleHealth, handleStatus, handleSkillsStatus, handleSkillsUpdate, handleModelsList, handleLastHeartbeat, handleSystemPresence } from './handlers/system.js';
 import { handleAgentsList, handleAgentsFilesList, handleAgentIdentityGet, handleChannelsStatus } from './handlers/agents.js';
 import { handleCronStatus, handleCronList, handleCronAdd, handleCronUpdate, handleCronRun, handleCronRemove, handleCronRuns } from './handlers/cron.js';
 import { handleConfigGetFull, handleConfigSchema, handleConfigSet, handleConfigApply } from './handlers/config.js';
 import { handleLogsTail } from './handlers/logs.js';
 import { handleSessionsList, handleSessionsPatch, handleSessionsDelete } from './handlers/sessions.js';
+import { handleSessionsUsage, handleUsageCost, handleSessionUsageTimeSeries, handleSessionUsageLogs } from './handlers/usage.js';
 import { handleChatSend, handleChatHistory, handleChatAbort, type ChatSendParams } from './handlers/chat.js';
 import { AbortManager } from './abort-manager.js';
 import { ChatHistoryStore } from './history-store.js';
@@ -61,6 +62,9 @@ export class RpcDispatcher {
 
       case 'skills.status':
         return handleSkillsStatus(id, this.deps.skillManager);
+
+      case 'skills.update':
+        return handleSkillsUpdate(id, params as { skillKey?: string; enabled?: boolean }, this.deps.skillManager);
 
       // --- Agents ---
       case 'agents.list':
@@ -122,6 +126,10 @@ export class RpcDispatcher {
           this.deps.reloadConfig,
         );
 
+      // --- Update ---
+      case 'update.run':
+        return okResponse(id, { message: '自动更新功能暂未开放' });
+
       // --- Debug ---
       case 'models.list':
         return handleModelsList(id, this.deps.appConfig);
@@ -169,7 +177,7 @@ export class RpcDispatcher {
         return handleSessionsList(id, this.deps.sessionManager, this.deps.memory, userId);
 
       case 'sessions.patch':
-        return handleSessionsPatch(id);
+        return handleSessionsPatch(id, params as { key?: string; label?: string }, this.deps.memory);
 
       case 'sessions.delete':
         return handleSessionsDelete(
@@ -179,6 +187,35 @@ export class RpcDispatcher {
           this.deps.memory,
           this.deps.historyStore,
           userId,
+        );
+
+      // --- Usage ---
+      case 'sessions.usage':
+        return handleSessionsUsage(
+          id,
+          params as { startDate?: string; endDate?: string; limit?: number },
+          this.deps.memory,
+        );
+
+      case 'usage.cost':
+        return handleUsageCost(
+          id,
+          params as { startDate?: string; endDate?: string },
+          this.deps.memory,
+        );
+
+      case 'sessions.usage.timeseries':
+        return handleSessionUsageTimeSeries(
+          id,
+          params as { key?: string },
+          this.deps.memory,
+        );
+
+      case 'sessions.usage.logs':
+        return handleSessionUsageLogs(
+          id,
+          params as { key?: string; limit?: number },
+          this.deps.memory,
         );
 
       // --- Fallback ---

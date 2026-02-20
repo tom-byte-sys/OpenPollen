@@ -142,7 +142,7 @@ function renderSkill(skill: SkillStatusEntry, props: SkillsProps) {
             ?disabled=${busy}
             @click=${() => props.onToggle(skill.skillKey, skill.disabled)}
           >
-            ${skill.disabled ? t('common.enabled') : t('common.disabled')}
+            ${skill.disabled ? t('common.enable') : t('common.disable')}
           </button>
           ${
             canInstall

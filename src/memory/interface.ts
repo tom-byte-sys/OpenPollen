@@ -13,6 +13,7 @@ export interface MemoryStore {
   set(namespace: string, key: string, value: string, ttl?: number): Promise<void>;
   delete(namespace: string, key: string): Promise<void>;
   list(namespace: string, prefix?: string): Promise<MemoryEntry[]>;
+  listNamespaces(prefix?: string): Promise<string[]>;
   clear(namespace: string): Promise<void>;
   close(): Promise<void>;
 }

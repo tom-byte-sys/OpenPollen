@@ -115,7 +115,7 @@ export class WebchatAdapter implements ChannelAdapter {
     this.dispatcher = new RpcDispatcher(deps);
 
     // Resolve UI directory
-    const uiDir = resolve(import.meta.dirname ?? '.', '..', '..', '..', '..', 'dist', 'control-ui');
+    const uiDir = resolve(import.meta.dirname ?? '.', '..', '..', '..', 'dist', 'control-ui');
 
     const uiConfig: UiServerConfig = {
       port: this.config.port,

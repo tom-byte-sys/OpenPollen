@@ -104,6 +104,17 @@ export class FileMemoryStore implements MemoryStore {
     return entries;
   }
 
+  async listNamespaces(prefix?: string): Promise<string[]> {
+    if (!existsSync(this.baseDir)) return [];
+    const dirs = readdirSync(this.baseDir, { withFileTypes: true })
+      .filter(d => d.isDirectory())
+      .map(d => d.name);
+    if (prefix) {
+      return dirs.filter(d => d.startsWith(prefix));
+    }
+    return dirs;
+  }
+
   async clear(namespace: string): Promise<void> {
     const nsDir = resolve(this.baseDir, namespace);
     if (existsSync(nsDir)) {

@@ -301,7 +301,7 @@ export class OpenPollenApp extends LitElement {
   @state() skillEdits: Record<string, string> = {};
   @state() skillsBusyKey: string | null = null;
   @state() skillMessages: Record<string, SkillMessage> = {};
-  marketplaceUrl = "";
+  marketplaceUrl = "https://agent.beebywork.com/console/skills";
 
   @state() debugLoading = false;
   @state() debugStatus: StatusSummary | null = null;

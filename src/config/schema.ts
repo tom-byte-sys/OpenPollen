@@ -6,8 +6,6 @@ export const AgentConfigSchema = Type.Object({
   maxTurns: Type.Number({ default: 15, minimum: 1, maximum: 100 }),
   maxBudgetUsd: Type.Number({ default: 1.0, minimum: 0 }),
   systemPrompt: Type.Optional(Type.String()),
-  defaultSkills: Type.Array(Type.String(), { default: [] }),
-  defaultTools: Type.Array(Type.String(), { default: ['Read', 'Grep', 'Glob', 'WebSearch'] }),
 });
 
 export const AuthConfigSchema = Type.Object({
@@ -73,7 +71,6 @@ export const ProviderSchema = Type.Object({
 
 export const ProvidersConfigSchema = Type.Object({
   beelive: Type.Optional(ProviderSchema),
-  agentterm: Type.Optional(ProviderSchema),
   anthropic: Type.Optional(ProviderSchema),
   openai: Type.Optional(ProviderSchema),
   ollama: Type.Optional(ProviderSchema),
@@ -81,7 +78,6 @@ export const ProvidersConfigSchema = Type.Object({
 
 export const SkillsConfigSchema = Type.Object({
   directory: Type.String({ default: '~/.openpollen/skills' }),
-  enabled: Type.Array(Type.String(), { default: [] }),
 });
 
 export const MemoryConfigSchema = Type.Object({
@@ -117,7 +113,6 @@ export const AppConfigSchema = Type.Object({
   skills: SkillsConfigSchema,
   memory: MemoryConfigSchema,
   logging: LoggingConfigSchema,
-  marketplace: Type.Optional(MarketplaceConfigSchema),
 });
 
 export type AgentConfig = Static<typeof AgentConfigSchema>;
@@ -127,5 +122,4 @@ export type ProvidersConfig = Static<typeof ProvidersConfigSchema>;
 export type SkillsConfig = Static<typeof SkillsConfigSchema>;
 export type MemoryConfig = Static<typeof MemoryConfigSchema>;
 export type LoggingConfig = Static<typeof LoggingConfigSchema>;
-export type MarketplaceConfig = Static<typeof MarketplaceConfigSchema>;
 export type AppConfig = Static<typeof AppConfigSchema>;

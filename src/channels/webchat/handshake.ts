@@ -44,6 +44,10 @@ const SUPPORTED_METHODS = [
   'cron.run',
   'cron.remove',
   'cron.runs',
+  'sessions.usage',
+  'sessions.usage.timeseries',
+  'sessions.usage.logs',
+  'usage.cost',
 ];
 
 const SUPPORTED_EVENTS = ['chat', 'tick', 'cron'];

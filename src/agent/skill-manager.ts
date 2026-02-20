@@ -31,11 +31,60 @@ interface SkillFrontmatter {
 export class SkillManager {
   private skillsDir: string;
   private skills = new Map<string, SkillInfo>();
+  private disabledSkills = new Set<string>();
 
   constructor(skillsDir: string) {
     this.skillsDir = skillsDir;
     if (!existsSync(this.skillsDir)) {
       mkdirSync(this.skillsDir, { recursive: true });
+    }
+    this.loadDisabledState();
+  }
+
+  /** 获取技能目录路径 */
+  getSkillsDir(): string {
+    return this.skillsDir;
+  }
+
+  /** 检查技能是否被禁用 */
+  isDisabled(name: string): boolean {
+    return this.disabledSkills.has(name);
+  }
+
+  /** 设置技能启用/禁用状态 */
+  setEnabled(name: string, enabled: boolean): void {
+    if (!this.skills.has(name)) {
+      throw new Error(`技能未找到: ${name}`);
+    }
+    if (enabled) {
+      this.disabledSkills.delete(name);
+    } else {
+      this.disabledSkills.add(name);
+    }
+    this.saveDisabledState();
+    log.info({ skill: name, enabled }, '技能状态已更新');
+  }
+
+  private get disabledStatePath(): string {
+    return join(this.skillsDir, '.disabled.json');
+  }
+
+  private loadDisabledState(): void {
+    try {
+      if (existsSync(this.disabledStatePath)) {
+        const data = JSON.parse(readFileSync(this.disabledStatePath, 'utf-8')) as string[];
+        this.disabledSkills = new Set(data);
+      }
+    } catch {
+      log.warn('加载禁用状态失败，使用默认值');
+    }
+  }
+
+  private saveDisabledState(): void {
+    try {
+      writeFileSync(this.disabledStatePath, JSON.stringify([...this.disabledSkills], null, 2));
+    } catch (error) {
+      log.error({ error }, '保存禁用状态失败');
     }
   }
 

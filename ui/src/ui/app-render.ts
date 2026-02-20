@@ -330,7 +330,14 @@ export function renderApp(state: AppViewState) {
                 onPatch: (key, patch) => patchSession(state, key, patch),
                 onDelete: (key) => requestDeleteSession(state, key),
                 deleteConfirmKey: state.sessionsDeleteConfirmKey,
-                onDeleteConfirm: () => confirmDeleteSession(state),
+                onDeleteConfirm: async () => {
+                  const deletedKey = state.sessionsDeleteConfirmKey;
+                  await confirmDeleteSession(state);
+                  if (deletedKey && deletedKey === state.sessionKey) {
+                    state.chatMessages = [];
+                    state.chatToolMessages = [];
+                  }
+                },
                 onDeleteCancel: () => cancelDeleteSession(state),
                 onSessionClick: (key) => {
                   state.sessionKey = key;
@@ -898,10 +905,29 @@ export function renderApp(state: AppViewState) {
                 onAbort: () => void state.handleAbortChat(),
                 onQueueRemove: (id) => state.removeQueuedMessage(id),
                 onNewSession: () => {
+                  // Send /new to backend to archive current SDK session
                   state.handleSendChat("/new", { restoreDraft: true });
-                  // Clear local chat messages so the UI starts fresh
+                  // Generate new sessionKey for the new conversation
+                  const newKey = `chat-${Date.now()}`;
+                  state.sessionKey = newKey;
                   state.chatMessages = [];
                   state.chatToolMessages = [];
+                  state.chatStream = null;
+                  state.chatStreamThinking = null;
+                  state.chatStreamStartedAt = null;
+                  state.chatRunId = null;
+                  state.chatQueue = [];
+                  state.resetToolStream();
+                  state.resetChatScroll();
+                  state.applySettings({
+                    ...state.settings,
+                    sessionKey: newKey,
+                    lastActiveSessionKey: newKey,
+                  });
+                  // Update URL to reflect new session
+                  const url = new URL(window.location.href);
+                  url.searchParams.set("session", newKey);
+                  window.history.replaceState(null, "", url.toString());
                 },
                 showNewMessages: state.chatNewMessagesBelow && !state.chatManualRefreshInFlight,
                 onScrollToBottom: () => state.scrollToBottom(),

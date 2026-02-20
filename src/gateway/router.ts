@@ -81,7 +81,8 @@ export class MessageRouter {
       return response;
     } catch (error) {
       log.error({ sessionId: session.id, error }, '消息处理失败');
-      return '抱歉，处理消息时出错了，请稍后再试。';
+      // 向上抛出，让 chat handler 通过 stream.sendError 通知前端
+      throw error;
     } finally {
       this.processing.delete(session.id);
     }

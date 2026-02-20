@@ -1,5 +1,5 @@
 import type { ResponseFrame } from '../protocol.js';
-import { okResponse } from '../protocol.js';
+import { okResponse, errorResponse } from '../protocol.js';
 import type { AppConfig } from '../../../config/schema.js';
 import type { SkillManager } from '../../../agent/skill-manager.js';
 
@@ -22,9 +22,14 @@ export function handleConfigGet(reqId: string): ResponseFrame {
 }
 
 export function handleSkillsStatus(reqId: string, skillManager?: SkillManager): ResponseFrame {
+  const empty = { bins: [], env: [], config: [], os: [] };
+
   if (!skillManager) {
-    return okResponse(reqId, { skills: [] });
+    return okResponse(reqId, { workspaceDir: '', managedSkillsDir: '', skills: [] });
   }
+
+  // 每次请求时重新扫描技能目录，确保新安装的技能能被发现
+  skillManager.discover();
 
   const skills = skillManager.list().map((s) => ({
     name: s.name,
@@ -33,13 +38,39 @@ export function handleSkillsStatus(reqId: string, skillManager?: SkillManager): 
     filePath: `${s.directory}/SKILL.md`,
     baseDir: s.directory,
     skillKey: s.name,
-    eligible: true,
+    eligible: !skillManager.isDisabled(s.name),
     always: false,
-    disabled: false,
+    disabled: skillManager.isDisabled(s.name),
     blockedByAllowlist: false,
+    requirements: { ...empty },
+    missing: { ...empty },
+    configChecks: [],
+    install: [],
   }));
 
-  return okResponse(reqId, { skills });
+  return okResponse(reqId, {
+    workspaceDir: '',
+    managedSkillsDir: skillManager.getSkillsDir(),
+    skills,
+  });
+}
+
+export function handleSkillsUpdate(
+  reqId: string,
+  params: { skillKey?: string; enabled?: boolean },
+  skillManager?: SkillManager,
+): ResponseFrame {
+  if (!skillManager) {
+    return errorResponse(reqId, 'UNAVAILABLE', 'Skill manager not available');
+  }
+  const { skillKey, enabled } = params;
+  if (!skillKey) {
+    return errorResponse(reqId, 'INVALID_PARAMS', 'Missing skillKey');
+  }
+  if (typeof enabled === 'boolean') {
+    skillManager.setEnabled(skillKey, enabled);
+  }
+  return okResponse(reqId, { ok: true });
 }
 
 export function handleModelsList(reqId: string, appConfig: AppConfig): ResponseFrame {

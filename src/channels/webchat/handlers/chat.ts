@@ -36,19 +36,24 @@ export function handleChatSend(
   const runId = params.idempotencyKey || randomUUID();
   const sessionKey = params.sessionKey || `webchat:dm:${userId}`;
 
+  // Detect session-reset commands — don't persist these in chat history
+  const isResetCommand = /^\/(new|reset)\b/i.test(userText);
+
   // Register this run for abort tracking
   abortManager.register(runId, sessionKey);
 
-  // Store user message
-  const userMsg: StoredMessage = {
-    role: 'user',
-    content: [{ type: 'text', text: userText }],
-    timestamp: Date.now(),
-    runId,
-  };
-  historyStore.appendMessage(sessionKey, userMsg).catch(err =>
-    log.warn({ error: err }, 'Failed to store user message'),
-  );
+  // Store user message (skip for /new and /reset commands)
+  if (!isResetCommand) {
+    const userMsg: StoredMessage = {
+      role: 'user',
+      content: [{ type: 'text', text: userText }],
+      timestamp: Date.now(),
+      runId,
+    };
+    historyStore.appendMessage(sessionKey, userMsg).catch(err =>
+      log.warn({ error: err }, 'Failed to store user message'),
+    );
+  }
 
   // Build InboundMessage for the router
   const inbound: InboundMessage = {
@@ -85,20 +90,22 @@ export function handleChatSend(
       } else {
         stream.sendFinal();
 
-        // Store assistant message
-        const assistantContent: StoredMessage['content'] = [];
-        const thinkingText = stream.getThinkingBuffer();
-        if (thinkingText) {
-          assistantContent.push({ type: 'thinking', thinking: thinkingText });
+        // Store assistant message (skip for /new and /reset commands)
+        if (!isResetCommand) {
+          const assistantContent: StoredMessage['content'] = [];
+          const thinkingText = stream.getThinkingBuffer();
+          if (thinkingText) {
+            assistantContent.push({ type: 'thinking', thinking: thinkingText });
+          }
+          assistantContent.push({ type: 'text', text: stream.getBuffer() });
+          const assistantMsg: StoredMessage = {
+            role: 'assistant',
+            content: assistantContent,
+            timestamp: Date.now(),
+            runId,
+          };
+          await historyStore.appendMessage(sessionKey, assistantMsg);
         }
-        assistantContent.push({ type: 'text', text: stream.getBuffer() });
-        const assistantMsg: StoredMessage = {
-          role: 'assistant',
-          content: assistantContent,
-          timestamp: Date.now(),
-          runId,
-        };
-        await historyStore.appendMessage(sessionKey, assistantMsg);
       }
     } catch (err) {
       log.error({ error: err, runId }, 'Chat run failed');

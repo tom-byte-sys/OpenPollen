@@ -144,6 +144,30 @@ export class SqliteMemoryStore implements MemoryStore {
     return entries;
   }
 
+  async listNamespaces(prefix?: string): Promise<string[]> {
+    const now = Date.now();
+    let stmt;
+    if (prefix) {
+      stmt = this.db.prepare(
+        'SELECT DISTINCT namespace FROM memory WHERE namespace LIKE ? AND (expires_at IS NULL OR expires_at > ?)',
+      );
+      stmt.bind([`${prefix}%`, now]);
+    } else {
+      stmt = this.db.prepare(
+        'SELECT DISTINCT namespace FROM memory WHERE (expires_at IS NULL OR expires_at > ?)',
+      );
+      stmt.bind([now]);
+    }
+
+    const namespaces: string[] = [];
+    while (stmt.step()) {
+      const row = stmt.getAsObject() as { namespace: string };
+      namespaces.push(row.namespace);
+    }
+    stmt.free();
+    return namespaces;
+  }
+
   async clear(namespace: string): Promise<void> {
     this.db.run('DELETE FROM memory WHERE namespace = ?', [namespace]);
     this.persist();

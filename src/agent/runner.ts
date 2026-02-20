@@ -44,6 +44,15 @@ interface SDKMessage {
   is_error?: boolean;
   num_turns?: number;
   uuid?: string;
+  // result 消息 — token 用量详情
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    cache_read_input_tokens?: number;
+    cache_creation_input_tokens?: number;
+  };
+  duration_ms?: number;
+  stop_reason?: string | null;
 }
 
 export class AgentRunner {
@@ -83,7 +92,8 @@ export class AgentRunner {
       const errMsg = error instanceof Error ? error.message : String(error);
       const errStack = error instanceof Error ? error.stack : undefined;
       log.error({ sessionId: session.id, error: errMsg, stack: errStack }, 'Agent 执行失败');
-      throw error;
+      // 将底层错误转换为用户友好的提示
+      throw new Error(this.humanizeError(errMsg));
     }
   }
 
@@ -238,6 +248,37 @@ export class AgentRunner {
           isError: message.is_error,
         }, 'SDK 执行结果');
 
+        // 持久化 usage-log 记录
+        try {
+          const inputTokens = message.usage?.input_tokens ?? 0;
+          const outputTokens = message.usage?.output_tokens ?? 0;
+          const cacheReadTokens = message.usage?.cache_read_input_tokens ?? 0;
+          const cacheWriteTokens = message.usage?.cache_creation_input_tokens ?? 0;
+          const now = Date.now();
+          const usageRecord = {
+            timestamp: now,
+            channelId: session.channelId,
+            sdkSessionId: message.session_id,
+            model: session.model ?? config.agent.model,
+            inputTokens,
+            outputTokens,
+            cacheReadTokens,
+            cacheWriteTokens,
+            totalTokens: inputTokens + outputTokens + cacheReadTokens + cacheWriteTokens,
+            costUsd: message.total_cost_usd ?? 0,
+            numTurns: message.num_turns,
+            durationMs: message.duration_ms,
+            isError: message.is_error ?? false,
+            stopReason: message.stop_reason ?? null,
+          };
+          const usageNamespace = `usage-log:${session.channelId}`;
+          const seq = String(now % 100000).padStart(6, '0');
+          const usageKey = `run:${now}:${seq}`;
+          await this.memory.set(usageNamespace, usageKey, JSON.stringify(usageRecord));
+        } catch (err) {
+          log.warn({ error: err }, '持久化 usage-log 失败');
+        }
+
         // 如果 responseText 为空但有 result 字段，使用 result
         if (!responseText && message.result) {
           responseText = message.result;
@@ -313,7 +354,7 @@ export class AgentRunner {
 
   /**
    * 按优先级解析 providers 配置，映射为 SDK 环境变量
-   * 优先级: beelive > agentterm(兼容) > anthropic > ollama
+   * 优先级: beelive > anthropic > ollama
    */
   private resolveProviderEnv(): Record<string, string> {
     const { providers } = this.config;
@@ -324,14 +365,6 @@ export class AgentRunner {
       env['ANTHROPIC_API_KEY'] = providers.beelive.apiKey;
       env['ANTHROPIC_BASE_URL'] = providers.beelive.baseUrl || BEELIVE_PROXY_URL;
       log.info('使用 Beelive 聚合平台');
-      return env;
-    }
-
-    // 向后兼容旧的 agentterm 配置名
-    if (providers.agentterm?.enabled && providers.agentterm.apiKey) {
-      env['ANTHROPIC_API_KEY'] = providers.agentterm.apiKey;
-      env['ANTHROPIC_BASE_URL'] = providers.agentterm.baseUrl || BEELIVE_PROXY_URL;
-      log.info('使用 Beelive 聚合平台 (兼容 agentterm 配置)');
       return env;
     }
 
@@ -401,5 +434,27 @@ export class AgentRunner {
     }
 
     return workspaceDir;
+  }
+
+  /**
+   * 将底层技术错误转换为用户友好的中文提示
+   */
+  private humanizeError(errMsg: string): string {
+    if (errMsg.includes('exited with code 1')) {
+      return 'AI 模型调用失败，可能是 API Key 无效或已过期，请检查配置。';
+    }
+    if (errMsg.includes('ECONNREFUSED') || errMsg.includes('ENOTFOUND')) {
+      return 'AI 服务连接失败，请检查网络连接和服务地址配置。';
+    }
+    if (errMsg.includes('ETIMEDOUT') || errMsg.includes('timeout')) {
+      return 'AI 模型响应超时，请稍后再试。';
+    }
+    if (errMsg.includes('SDK 加载失败')) {
+      return 'Agent SDK 加载失败，请检查依赖安装是否完整。';
+    }
+    if (errMsg.includes('rate limit') || errMsg.includes('429')) {
+      return '请求过于频繁，已触发速率限制，请稍后再试。';
+    }
+    return `处理消息时出错：${errMsg}`;
   }
 }

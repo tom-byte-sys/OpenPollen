@@ -34,7 +34,7 @@ function loadAuthToken(): string | null {
 
 function createMarketplaceClient(configPath?: string): MarketplaceClient {
   const config = loadConfig(configPath);
-  const apiUrl = config.marketplace?.apiUrl || process.env.BEELIVE_MARKETPLACE_URL || 'https://lite.beebywork.com/api/v1/skills-market';
+  const apiUrl = (config as Record<string, any>).marketplace?.apiUrl || process.env.BEELIVE_MARKETPLACE_URL || 'https://lite.beebywork.com/api/v1/skills-market';
   const token = loadAuthToken();
   return new MarketplaceClient(apiUrl, token ?? undefined);
 }
@@ -1064,7 +1064,7 @@ modelCmd
       console.log('\n已配置的 AI Provider:\n');
 
       // Beelive 平台
-      const beeliveProvider = providers.beelive ?? providers.agentterm;
+      const beeliveProvider = providers.beelive;
       if (beeliveProvider) {
         const status = beeliveProvider.enabled ? (beeliveProvider.apiKey ? 'OK' : '缺少 API Key') : '未启用';
         console.log(`  OpenPollen Cloud`);
@@ -1102,13 +1102,13 @@ modelCmd
         if (oi.apiKey) console.log(`    API Key: ${maskSecret(oi.apiKey)}`);
       }
 
-      if (!providers.beelive && !providers.agentterm && !providers.anthropic && !providers.ollama && !providers.openai) {
+      if (!providers.beelive && !providers.anthropic && !providers.ollama && !providers.openai) {
         console.log('  (无) 请运行 `openpollen init` 配置 Provider。');
       }
 
       // 若已登录 Beelive，显示远程套餐信息
       const token = loadAuthToken();
-      if (token && (providers.beelive?.enabled || providers.agentterm?.enabled)) {
+      if (token && providers.beelive?.enabled) {
         const atClient = createBeeliveClient(token);
         console.log('\n  OpenPollen Cloud 账户信息:');
         await showAccountStatus(atClient);
