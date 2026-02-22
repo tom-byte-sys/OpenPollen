@@ -83,6 +83,6 @@ describe('AgentRunner', () => {
   it('should throw when SDK is not available', async () => {
     const session = createMockSession();
 
-    await expect(runner.run(session, 'Hello')).rejects.toThrow('Claude Agent SDK 加载失败');
+    await expect(runner.run(session, 'Hello')).rejects.toThrow('Agent SDK 加载失败，请检查依赖安装是否完整。');
   });
 });

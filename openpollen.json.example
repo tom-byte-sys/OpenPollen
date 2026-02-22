@@ -52,6 +52,13 @@
       "appId": "${FEISHU_APP_ID}",
       "appSecret": "${FEISHU_APP_SECRET}",
       "groupPolicy": "mention"
+    },
+    "qq": {
+      "enabled": false,
+      "appId": "${QQ_BOT_APP_ID}",
+      "appSecret": "${QQ_BOT_APP_SECRET}",
+      "sandbox": true,
+      "groupPolicy": "mention"
     }
   },
 

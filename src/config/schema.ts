@@ -66,11 +66,23 @@ export const FeishuChannelSchema = Type.Object({
   ], { default: 'mention' }),
 });
 
+export const QQChannelSchema = Type.Object({
+  enabled: Type.Boolean({ default: false }),
+  appId: Type.String(),
+  appSecret: Type.String(),
+  sandbox: Type.Boolean({ default: false }),
+  groupPolicy: Type.Union([
+    Type.Literal('mention'),
+    Type.Literal('all'),
+  ], { default: 'mention' }),
+});
+
 export const ChannelsConfigSchema = Type.Object({
   dingtalk: Type.Optional(DingtalkChannelSchema),
   webchat: Type.Optional(WebchatChannelSchema),
   wechat: Type.Optional(WechatChannelSchema),
   feishu: Type.Optional(FeishuChannelSchema),
+  qq: Type.Optional(QQChannelSchema),
 });
 
 export const ProviderSchema = Type.Object({
