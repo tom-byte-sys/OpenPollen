@@ -13,6 +13,9 @@ openpollen.json
 agenthub.json
 CLAUDE.md
 
+# Claude Code local settings (may contain credentials in permission history)
+.claude/
+
 # Data
 *.db
 *.db-journal
