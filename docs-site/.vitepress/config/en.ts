@@ -47,6 +47,8 @@ function sidebar(): DefaultTheme.Sidebar {
           { text: 'QQ Channel', link: '/en/channels/qq' },
           { text: 'Telegram', link: '/en/channels/telegram' },
           { text: 'Email', link: '/en/channels/email' },
+          { text: 'Discord', link: '/en/channels/discord' },
+          { text: 'Slack', link: '/en/channels/slack' },
         ],
       },
     ],

@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { getLogger } from '../../src/utils/logger.js';
 import { generateId } from '../../src/utils/crypto.js';
 import type { ChannelPlugin, PluginManifest } from '../../src/plugins/types.js';
@@ -6,6 +8,7 @@ import type { InboundMessage, OutboundMessage } from '../../src/channels/interfa
 const log = getLogger('dingtalk');
 
 const MAX_MESSAGE_LENGTH = 18000;
+const UPLOADS_DIR = resolve(process.env.HOME ?? '/tmp', '.openpollen', 'sdk-workspace', 'uploads');
 
 interface DingtalkConfig {
   clientId: string;
@@ -169,7 +172,6 @@ export default class DingtalkPlugin implements ChannelPlugin {
       const data = JSON.parse(res.data) as DingtalkMessageData;
 
       const isGroup = data.conversationType === '2';
-      const text = data.text?.content?.trim() ?? '';
 
       // 群消息检查是否需要 @
       if (isGroup && this.config.groupPolicy === 'mention') {
@@ -177,6 +179,56 @@ export default class DingtalkPlugin implements ChannelPlugin {
           return; // 群里没 @ 机器人，忽略
         }
       }
+
+      let text = '';
+      const msgtype = data.msgtype ?? 'text';
+
+      if (msgtype === 'text') {
+        text = data.text?.content?.trim() ?? '';
+      } else if (msgtype === 'picture') {
+        // 单独图片消息
+        const downloadCode = data.content?.downloadCode;
+        if (downloadCode) {
+          const imagePath = await this.downloadImage(downloadCode, data.robotCode);
+          if (imagePath) {
+            text = `[用户发送了一张图片，已保存到本地: ${imagePath}]\n请用 Read 工具查看这张图片并描述其内容。`;
+          } else {
+            // 下载失败通知用户
+            if (data.sessionWebhook) {
+              await this.replyViaWebhook(data.sessionWebhook, '图片下载失败，请重新发送。').catch(() => {});
+            }
+            return;
+          }
+        } else {
+          log.warn({ msgtype, content: data.content }, '图片消息缺少 downloadCode');
+          return;
+        }
+      } else if (msgtype === 'richText') {
+        // 图文混合消息
+        const parts: string[] = [];
+        const richText = data.content?.richText ?? [];
+        for (const block of richText) {
+          if (block.text) {
+            parts.push(block.text);
+          } else if (block.type === 'picture' && block.downloadCode) {
+            const imagePath = await this.downloadImage(block.downloadCode, data.robotCode);
+            if (imagePath) {
+              parts.push(`[图片已保存到本地: ${imagePath}，请用 Read 工具查看]`);
+            } else {
+              parts.push('[图片下载失败]');
+            }
+          }
+        }
+        text = parts.join('\n');
+        if (text) {
+          text += '\n请用 Read 工具查看图片并结合文字内容回复。';
+        }
+      } else {
+        log.info({ msgtype }, '收到不支持的钉钉消息类型');
+        return;
+      }
+
+      if (!text) return;
 
       const message: InboundMessage = {
         id: data.msgId ?? generateId(),
@@ -195,6 +247,7 @@ export default class DingtalkPlugin implements ChannelPlugin {
         senderId: message.senderId,
         senderName: message.senderName,
         conversationType: message.conversationType,
+        msgtype,
         textLength: text.length,
       }, '收到钉钉消息');
 
@@ -207,6 +260,66 @@ export default class DingtalkPlugin implements ChannelPlugin {
       }
     } catch (error) {
       log.error({ error }, '处理钉钉回调失败');
+    }
+  }
+
+  /**
+   * 从钉钉下载图片到本地 SDK workspace
+   * 流程: downloadCode → /v1.0/robot/messageFiles/download 获取临时 URL → 下载文件
+   */
+  private async downloadImage(downloadCode: string, robotCode?: string): Promise<string | null> {
+    try {
+      const accessToken = await this.getAccessToken();
+      const code = robotCode ?? this.config.robotCode ?? this.config.clientId;
+
+      // 获取临时下载 URL
+      const response = await fetch('https://api.dingtalk.com/v1.0/robot/messageFiles/download', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-acs-dingtalk-access-token': accessToken,
+        },
+        body: JSON.stringify({
+          downloadCode,
+          robotCode: code,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        log.error({ status: response.status, body: errorText }, '获取钉钉图片下载 URL 失败');
+        return null;
+      }
+
+      const result = await response.json() as { downloadUrl?: string };
+      if (!result.downloadUrl) {
+        log.warn({ result }, '钉钉图片下载 URL 为空');
+        return null;
+      }
+
+      // 下载实际文件
+      const fileResponse = await fetch(result.downloadUrl);
+      if (!fileResponse.ok) {
+        log.error({ status: fileResponse.status }, '下载钉钉图片文件失败');
+        return null;
+      }
+
+      // 确保上传目录存在
+      if (!existsSync(UPLOADS_DIR)) {
+        mkdirSync(UPLOADS_DIR, { recursive: true });
+      }
+
+      const fileName = `${Date.now()}_dingtalk_${downloadCode.slice(0, 8)}.jpg`;
+      const filePath = resolve(UPLOADS_DIR, fileName);
+
+      const buffer = Buffer.from(await fileResponse.arrayBuffer());
+      writeFileSync(filePath, buffer);
+
+      log.info({ filePath, fileSize: buffer.length }, '钉钉图片下载成功');
+      return filePath;
+    } catch (error) {
+      log.error({ error, downloadCode }, '下载钉钉图片失败');
+      return null;
     }
   }
 
@@ -309,9 +422,22 @@ interface DingtalkCallbackResponse {
   headers: Record<string, string>;
 }
 
+interface DingtalkRichTextBlock {
+  text?: string;
+  downloadCode?: string;
+  pictureDownloadCode?: string;
+  type?: string;
+}
+
 interface DingtalkMessageData {
   msgId?: string;
+  msgtype?: string;
   text?: { content?: string };
+  content?: {
+    downloadCode?: string;
+    pictureDownloadCode?: string;
+    richText?: DingtalkRichTextBlock[];
+  };
   conversationType?: string;
   conversationId?: string;
   senderId?: string;
@@ -320,4 +446,5 @@ interface DingtalkMessageData {
   chatbotCorpId?: string;
   isInAtList?: boolean;
   sessionWebhook?: string;
+  robotCode?: string;
 }

@@ -67,9 +67,26 @@ Send messages directly to the bot.
 
 ## Message Format
 
-- **Receiving**: Text messages supported
+- **Receiving**: Text messages and image messages supported
 - **Replying**: Replies in Markdown format (`sampleMarkdown`)
 - **Length limit**: Replies exceeding 18,000 characters are auto-truncated
+
+### Image Support
+
+The DingTalk plugin supports receiving images from users, including:
+
+- **Standalone images** (`picture` message type)
+- **Rich text with images** (`richText` message type, containing image and text blocks)
+
+When an image is received, the plugin automatically:
+
+1. Retrieves the image download URL via DingTalk Open API (using `downloadCode`)
+2. Downloads the image to local storage (`~/.openpollen/sdk-workspace/uploads/`)
+3. Passes the image path to the Agent, which uses the Read tool to analyze the image content
+
+::: tip
+Receiving image messages requires enabling the corresponding message type permissions in your DingTalk Open Platform app configuration.
+:::
 
 ## Reply Mechanism
 

@@ -64,6 +64,18 @@
       "enabled": false,
       "token": "${TELEGRAM_BOT_TOKEN}",
       "pollingTimeout": 30,
+      "groupPolicy": "mention",
+      "proxy": ""
+    },
+    "discord": {
+      "enabled": false,
+      "token": "${DISCORD_BOT_TOKEN}",
+      "groupPolicy": "mention"
+    },
+    "slack": {
+      "enabled": false,
+      "botToken": "${SLACK_BOT_TOKEN}",
+      "appToken": "${SLACK_APP_TOKEN}",
       "groupPolicy": "mention"
     },
     "email": {

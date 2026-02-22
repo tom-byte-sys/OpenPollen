@@ -85,6 +85,7 @@ export const TelegramChannelSchema = Type.Object({
     Type.Literal('mention'),
     Type.Literal('all'),
   ], { default: 'mention' }),
+  proxy: Type.Optional(Type.String()),
 });
 
 export const EmailChannelSchema = Type.Object({
@@ -109,6 +110,25 @@ export const EmailChannelSchema = Type.Object({
   maxEmailBodyLength: Type.Number({ default: 10000 }),
 });
 
+export const DiscordChannelSchema = Type.Object({
+  enabled: Type.Boolean({ default: false }),
+  token: Type.String(),
+  groupPolicy: Type.Union([
+    Type.Literal('mention'),
+    Type.Literal('all'),
+  ], { default: 'mention' }),
+});
+
+export const SlackChannelSchema = Type.Object({
+  enabled: Type.Boolean({ default: false }),
+  botToken: Type.String(),
+  appToken: Type.String(),
+  groupPolicy: Type.Union([
+    Type.Literal('mention'),
+    Type.Literal('all'),
+  ], { default: 'mention' }),
+});
+
 export const ChannelsConfigSchema = Type.Object({
   dingtalk: Type.Optional(DingtalkChannelSchema),
   webchat: Type.Optional(WebchatChannelSchema),
@@ -117,6 +137,8 @@ export const ChannelsConfigSchema = Type.Object({
   qq: Type.Optional(QQChannelSchema),
   telegram: Type.Optional(TelegramChannelSchema),
   email: Type.Optional(EmailChannelSchema),
+  discord: Type.Optional(DiscordChannelSchema),
+  slack: Type.Optional(SlackChannelSchema),
 });
 
 export const ProviderSchema = Type.Object({
