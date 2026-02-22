@@ -1147,6 +1147,15 @@ channelCmd
         console.log(`    端口: ${wc.port}`);
       }
     }
+
+    if (config.channels.feishu) {
+      const fs = config.channels.feishu;
+      console.log(`  飞书: ${fs.enabled ? '已启用' : '未启用'}`);
+      if (fs.enabled) {
+        console.log(`    App ID: ${maskSecret(fs.appId)}`);
+        console.log(`    群消息策略: ${fs.groupPolicy}`);
+      }
+    }
   });
 
 channelCmd
@@ -1168,7 +1177,7 @@ channelCmd
       } catch {
         console.log(`无法连接 WebChat (端口 ${port})。请先运行 \`openpollen start\`。`);
       }
-    } else if (name === 'dingtalk') {
+    } else if (name === 'dingtalk' || name === 'feishu') {
       // 通过 Gateway HTTP API 发送测试消息
       const url = `http://${config.gateway.host}:${config.gateway.port}/api/chat`;
       try {
@@ -1188,7 +1197,7 @@ channelCmd
       }
     } else {
       console.log(`未知或未启用的平台: ${name}`);
-      console.log('可用平台: webchat, dingtalk');
+      console.log('可用平台: webchat, dingtalk, feishu');
     }
   });
 
