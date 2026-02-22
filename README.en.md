@@ -2,7 +2,7 @@
 
 > Secure, easy-to-use, and extensible open-source AI Agent framework
 
-[中文](./README.md) | [Documentation](https://tom-byte-sys.github.io/OpenPollen/docs/en/guide/introduction)
+[中文](./README.md) | [Documentation](https://tom-byte-sys.github.io/OpenPollen/en/guide/introduction)
 
 OpenPollen is an open-source multi-platform AI Agent framework built on Claude Agent SDK. It supports integration with chat platforms like DingTalk, Feishu (Lark), WeCom, and more. Skills are defined using SKILL.md (Agent Skills open standard) for easy installation, discovery, and execution.
 
@@ -42,13 +42,13 @@ openpollen start
 
 ## Documentation
 
-Full documentation is available at [OpenPollen Docs](https://tom-byte-sys.github.io/OpenPollen/docs/en/guide/introduction).
+Full documentation is available at [OpenPollen Docs](https://tom-byte-sys.github.io/OpenPollen/en/guide/introduction).
 
-- [Quick Start](https://tom-byte-sys.github.io/OpenPollen/docs/en/guide/quickstart)
-- [Architecture](https://tom-byte-sys.github.io/OpenPollen/docs/en/guide/architecture)
-- [Channels](https://tom-byte-sys.github.io/OpenPollen/docs/en/channels/webchat) — WebChat / DingTalk / Feishu (Lark)
-- [Skills](https://tom-byte-sys.github.io/OpenPollen/docs/en/skills/overview)
-- [Configuration](https://tom-byte-sys.github.io/OpenPollen/docs/en/reference/config)
+- [Quick Start](https://tom-byte-sys.github.io/OpenPollen/en/guide/quickstart)
+- [Architecture](https://tom-byte-sys.github.io/OpenPollen/en/guide/architecture)
+- [Channels](https://tom-byte-sys.github.io/OpenPollen/en/channels/webchat) — WebChat / DingTalk / Feishu (Lark)
+- [Skills](https://tom-byte-sys.github.io/OpenPollen/en/skills/overview)
+- [Configuration](https://tom-byte-sys.github.io/OpenPollen/en/reference/config)
 
 Preview docs locally:
 

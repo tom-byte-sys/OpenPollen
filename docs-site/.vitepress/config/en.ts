@@ -9,7 +9,7 @@ export const en = defineConfig({
     sidebar: sidebar(),
 
     editLink: {
-      pattern: 'https://github.com/anthropics/claude-code/edit/main/docs-site/en/:path',
+      pattern: 'https://github.com/tom-byte-sys/OpenPollen/edit/main/docs-site/en/:path',
       text: 'Edit this page',
     },
   },

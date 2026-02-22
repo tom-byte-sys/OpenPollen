@@ -9,7 +9,7 @@ export const zh = defineConfig({
     sidebar: sidebar(),
 
     editLink: {
-      pattern: 'https://github.com/anthropics/claude-code/edit/main/docs-site/zh/:path',
+      pattern: 'https://github.com/tom-byte-sys/OpenPollen/edit/main/docs-site/zh/:path',
       text: '编辑此页',
     },
 

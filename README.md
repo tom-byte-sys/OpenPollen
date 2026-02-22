@@ -2,7 +2,7 @@
 
 > 安全、易用、可扩展的开源 AI Agent 框架
 
-[English](./README.en.md) | [文档](https://tom-byte-sys.github.io/OpenPollen/docs/zh/guide/introduction)
+[English](./README.en.md) | [文档](https://tom-byte-sys.github.io/OpenPollen/zh/guide/introduction)
 
 OpenPollen 是一个开源的多平台 AI Agent 框架，基于 Claude Agent SDK 构建。支持钉钉、飞书、企业微信等聊天平台接入，通过 SKILL.md（Agent Skills 开放标准）实现技能的安装、发现和执行。
 
@@ -42,13 +42,13 @@ openpollen start
 
 ## 文档
 
-完整文档请访问 [OpenPollen 文档站](https://tom-byte-sys.github.io/OpenPollen/docs/zh/guide/introduction)。
+完整文档请访问 [OpenPollen 文档站](https://tom-byte-sys.github.io/OpenPollen/zh/guide/introduction)。
 
-- [快速开始](https://tom-byte-sys.github.io/OpenPollen/docs/zh/guide/quickstart)
-- [架构概览](https://tom-byte-sys.github.io/OpenPollen/docs/zh/guide/architecture)
-- [渠道接入](https://tom-byte-sys.github.io/OpenPollen/docs/zh/channels/webchat) — WebChat / 钉钉 / 飞书
-- [技能系统](https://tom-byte-sys.github.io/OpenPollen/docs/zh/skills/overview)
-- [配置参考](https://tom-byte-sys.github.io/OpenPollen/docs/zh/reference/config)
+- [快速开始](https://tom-byte-sys.github.io/OpenPollen/zh/guide/quickstart)
+- [架构概览](https://tom-byte-sys.github.io/OpenPollen/zh/guide/architecture)
+- [渠道接入](https://tom-byte-sys.github.io/OpenPollen/zh/channels/webchat) — WebChat / 钉钉 / 飞书
+- [技能系统](https://tom-byte-sys.github.io/OpenPollen/zh/skills/overview)
+- [配置参考](https://tom-byte-sys.github.io/OpenPollen/zh/reference/config)
 
 本地预览文档：
 

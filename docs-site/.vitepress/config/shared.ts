@@ -4,13 +4,13 @@ export const shared = defineConfig({
   title: 'OpenPollen',
   description: '安全、易用、可扩展的开源 AI Agent 框架',
 
-  base: '/docs/',
+  base: '/OpenPollen/',
   appearance: 'dark',
   lastUpdated: true,
   cleanUrls: true,
 
   head: [
-    ['link', { rel: 'icon', href: '/docs/logo.svg' }],
+    ['link', { rel: 'icon', href: '/OpenPollen/logo.svg' }],
   ],
 
   themeConfig: {
