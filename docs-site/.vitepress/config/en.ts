@@ -45,6 +45,8 @@ function sidebar(): DefaultTheme.Sidebar {
           { text: 'DingTalk', link: '/en/channels/dingtalk' },
           { text: 'Feishu (Lark)', link: '/en/channels/feishu' },
           { text: 'QQ Channel', link: '/en/channels/qq' },
+          { text: 'Telegram', link: '/en/channels/telegram' },
+          { text: 'Email', link: '/en/channels/email' },
         ],
       },
     ],

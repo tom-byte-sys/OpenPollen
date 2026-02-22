@@ -59,6 +59,30 @@
       "appSecret": "${QQ_BOT_APP_SECRET}",
       "sandbox": true,
       "groupPolicy": "mention"
+    },
+    "telegram": {
+      "enabled": false,
+      "token": "${TELEGRAM_BOT_TOKEN}",
+      "pollingTimeout": 30,
+      "groupPolicy": "mention"
+    },
+    "email": {
+      "enabled": false,
+      "imapHost": "imap.gmail.com",
+      "imapPort": 993,
+      "imapUser": "${EMAIL_USER}",
+      "imapPassword": "${EMAIL_PASSWORD}",
+      "imapTls": true,
+      "smtpHost": "smtp.gmail.com",
+      "smtpPort": 465,
+      "smtpUser": "${EMAIL_USER}",
+      "smtpPassword": "${EMAIL_PASSWORD}",
+      "smtpTls": true,
+      "fromName": "OpenPollen Agent",
+      "fromAddress": "${EMAIL_USER}",
+      "pollIntervalSeconds": 30,
+      "useIdle": true,
+      "mailbox": "INBOX"
     }
   },
 

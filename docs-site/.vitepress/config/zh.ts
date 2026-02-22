@@ -64,6 +64,8 @@ function sidebar(): DefaultTheme.Sidebar {
           { text: '钉钉', link: '/zh/channels/dingtalk' },
           { text: '飞书', link: '/zh/channels/feishu' },
           { text: 'QQ 频道', link: '/zh/channels/qq' },
+          { text: 'Telegram', link: '/zh/channels/telegram' },
+          { text: 'Email', link: '/zh/channels/email' },
         ],
       },
     ],

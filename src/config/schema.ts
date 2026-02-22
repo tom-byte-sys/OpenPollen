@@ -77,12 +77,46 @@ export const QQChannelSchema = Type.Object({
   ], { default: 'mention' }),
 });
 
+export const TelegramChannelSchema = Type.Object({
+  enabled: Type.Boolean({ default: false }),
+  token: Type.String(),
+  pollingTimeout: Type.Optional(Type.Number({ default: 30, minimum: 1, maximum: 60 })),
+  groupPolicy: Type.Union([
+    Type.Literal('mention'),
+    Type.Literal('all'),
+  ], { default: 'mention' }),
+});
+
+export const EmailChannelSchema = Type.Object({
+  enabled: Type.Boolean({ default: false }),
+  imapHost: Type.String(),
+  imapPort: Type.Number({ default: 993 }),
+  imapUser: Type.String(),
+  imapPassword: Type.String(),
+  imapTls: Type.Boolean({ default: true }),
+  smtpHost: Type.String(),
+  smtpPort: Type.Number({ default: 465 }),
+  smtpUser: Type.String(),
+  smtpPassword: Type.String(),
+  smtpTls: Type.Boolean({ default: true }),
+  fromName: Type.Optional(Type.String({ default: 'OpenPollen Agent' })),
+  fromAddress: Type.String(),
+  pollIntervalSeconds: Type.Number({ default: 30 }),
+  useIdle: Type.Boolean({ default: true }),
+  mailbox: Type.String({ default: 'INBOX' }),
+  allowedSenders: Type.Optional(Type.Array(Type.String())),
+  blockedSenders: Type.Optional(Type.Array(Type.String())),
+  maxEmailBodyLength: Type.Number({ default: 10000 }),
+});
+
 export const ChannelsConfigSchema = Type.Object({
   dingtalk: Type.Optional(DingtalkChannelSchema),
   webchat: Type.Optional(WebchatChannelSchema),
   wechat: Type.Optional(WechatChannelSchema),
   feishu: Type.Optional(FeishuChannelSchema),
   qq: Type.Optional(QQChannelSchema),
+  telegram: Type.Optional(TelegramChannelSchema),
+  email: Type.Optional(EmailChannelSchema),
 });
 
 export const ProviderSchema = Type.Object({
