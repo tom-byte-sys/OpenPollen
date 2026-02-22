@@ -13,7 +13,7 @@
 ## 获取源码
 
 ```bash
-git clone https://github.com/anthropics/claude-code.git
+git clone https://github.com/tom-byte-sys/OpenPollen.git
 cd OpenPollen
 ```
 

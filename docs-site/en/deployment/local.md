@@ -13,7 +13,7 @@ This guide covers setting up OpenPollen for local development.
 ## Get the Source
 
 ```bash
-git clone https://github.com/anthropics/claude-code.git
+git clone https://github.com/tom-byte-sys/OpenPollen.git
 cd OpenPollen
 ```
 

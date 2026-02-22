@@ -11,7 +11,7 @@ hero:
       link: /zh/guide/quickstart
     - theme: alt
       text: GitHub
-      link: https://github.com/anthropics/claude-code
+      link: https://github.com/tom-byte-sys/OpenPollen
 
 features:
   - icon: 🤖

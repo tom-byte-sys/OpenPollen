@@ -12,7 +12,7 @@ This guide helps you quickly launch OpenPollen locally and chat via WebChat.
 
 ```bash
 # Clone the repository
-git clone https://github.com/anthropics/claude-code.git
+git clone https://github.com/tom-byte-sys/OpenPollen.git
 cd OpenPollen
 
 # Install dependencies

@@ -12,7 +12,7 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/anthropics/claude-code.git
+git clone https://github.com/tom-byte-sys/OpenPollen.git
 cd OpenPollen
 
 # 安装依赖
