@@ -1,6 +1,6 @@
 # 介绍
 
-OpenPollen 是一个安全、易用、可扩展的开源 AI Agent 框架，基于 [Claude Agent SDK](https://docs.anthropic.com/en/docs/agents) 构建。
+OpenPollen 是一个安全、易用、可扩展的开源 AI Agent 框架，基于 [Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-node) 构建。
 
 ## 为什么选择 OpenPollen？
 

@@ -1,6 +1,6 @@
 # Introduction
 
-OpenPollen is a secure, easy-to-use, China-ready AI Agent platform built on the [Claude Agent SDK](https://docs.anthropic.com/en/docs/agents).
+OpenPollen is a secure, easy-to-use, China-ready AI Agent platform built on the [Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-node).
 
 ## Why OpenPollen?
 
