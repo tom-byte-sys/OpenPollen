@@ -2,13 +2,13 @@
 
 > 安全、易用、可扩展的开源 AI Agent 框架
 
-[English](./README.en.md)
+[English](./README.en.md) | [文档](https://tom-byte-sys.github.io/OpenPollen/docs/zh/guide/introduction)
 
-OpenPollen 是一个开源的多平台 AI Agent 框架，基于 Claude Agent SDK 构建。支持钉钉、企业微信、Telegram 等聊天平台接入，通过 SKILL.md（Agent Skills 开放标准）实现技能的安装、发现和执行。
+OpenPollen 是一个开源的多平台 AI Agent 框架，基于 Claude Agent SDK 构建。支持钉钉、飞书、企业微信等聊天平台接入，通过 SKILL.md（Agent Skills 开放标准）实现技能的安装、发现和执行。
 
 ## 特性
 
-- **多平台接入** — 钉钉、企业微信、Telegram、Web Chat
+- **多平台接入** — 钉钉、飞书、企业微信、Web Chat，均支持长连接模式
 - **技能系统** — 基于 SKILL.md 的声明式技能，一个文件即一个技能
 - **插件架构** — 四槽位插件系统（channel / skill / provider / memory）
 - **多模型支持** — Anthropic Claude、OpenAI、本地 Ollama，灵活切换
@@ -31,13 +31,29 @@ openpollen init
 
 交互式向导将引导你完成：
 1. 选择 AI 模型来源（云端托管 / 自有 API Key / 本地 Ollama）
-2. 选择聊天平台（钉钉 / Web Chat）
+2. 选择聊天平台（钉钉 / 飞书 / Web Chat）
 3. 安装推荐技能
 
 ### 启动
 
 ```bash
 openpollen start
+```
+
+## 文档
+
+完整文档请访问 [OpenPollen 文档站](https://tom-byte-sys.github.io/OpenPollen/docs/zh/guide/introduction)。
+
+- [快速开始](https://tom-byte-sys.github.io/OpenPollen/docs/zh/guide/quickstart)
+- [架构概览](https://tom-byte-sys.github.io/OpenPollen/docs/zh/guide/architecture)
+- [渠道接入](https://tom-byte-sys.github.io/OpenPollen/docs/zh/channels/webchat) — WebChat / 钉钉 / 飞书
+- [技能系统](https://tom-byte-sys.github.io/OpenPollen/docs/zh/skills/overview)
+- [配置参考](https://tom-byte-sys.github.io/OpenPollen/docs/zh/reference/config)
+
+本地预览文档：
+
+```bash
+cd docs-site && npx vitepress dev
 ```
 
 ## 技能系统

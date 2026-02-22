@@ -33,7 +33,7 @@ export const shared = defineConfig({
       },
     },
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/anthropics/claude-code' },
+      { icon: 'github', link: 'https://github.com/tom-byte-sys/OpenPollen' },
     ],
   },
 })

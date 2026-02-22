@@ -56,10 +56,21 @@ export const WechatChannelSchema = Type.Object({
   callbackPort: Type.Number({ default: 3002 }),
 });
 
+export const FeishuChannelSchema = Type.Object({
+  enabled: Type.Boolean({ default: false }),
+  appId: Type.String(),
+  appSecret: Type.String(),
+  groupPolicy: Type.Union([
+    Type.Literal('mention'),
+    Type.Literal('all'),
+  ], { default: 'mention' }),
+});
+
 export const ChannelsConfigSchema = Type.Object({
   dingtalk: Type.Optional(DingtalkChannelSchema),
   webchat: Type.Optional(WebchatChannelSchema),
   wechat: Type.Optional(WechatChannelSchema),
+  feishu: Type.Optional(FeishuChannelSchema),
 });
 
 export const ProviderSchema = Type.Object({

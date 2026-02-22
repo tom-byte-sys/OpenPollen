@@ -2,13 +2,13 @@
 
 > Secure, easy-to-use, and extensible open-source AI Agent framework
 
-[中文](./README.md)
+[中文](./README.md) | [Documentation](https://tom-byte-sys.github.io/OpenPollen/docs/en/guide/introduction)
 
-OpenPollen is an open-source multi-platform AI Agent framework built on Claude Agent SDK. It supports integration with chat platforms like DingTalk, WeCom, Telegram, and more. Skills are defined using SKILL.md (Agent Skills open standard) for easy installation, discovery, and execution.
+OpenPollen is an open-source multi-platform AI Agent framework built on Claude Agent SDK. It supports integration with chat platforms like DingTalk, Feishu (Lark), WeCom, and more. Skills are defined using SKILL.md (Agent Skills open standard) for easy installation, discovery, and execution.
 
 ## Features
 
-- **Multi-Platform** — DingTalk, WeCom, Telegram, Web Chat
+- **Multi-Platform** — DingTalk, Feishu (Lark), WeCom, Web Chat, all with long-connection support
 - **Skill System** — Declarative skills based on SKILL.md, one file per skill
 - **Plugin Architecture** — Four-slot plugin system (channel / skill / provider / memory)
 - **Multi-Model Support** — Anthropic Claude, OpenAI, local Ollama, seamlessly switchable
@@ -31,13 +31,29 @@ openpollen init
 
 The interactive wizard will guide you through:
 1. Choosing an AI model source (cloud hosting / your own API key / local Ollama)
-2. Selecting a chat platform (DingTalk / Web Chat)
+2. Selecting a chat platform (DingTalk / Feishu / Web Chat)
 3. Installing recommended skills
 
 ### Start
 
 ```bash
 openpollen start
+```
+
+## Documentation
+
+Full documentation is available at [OpenPollen Docs](https://tom-byte-sys.github.io/OpenPollen/docs/en/guide/introduction).
+
+- [Quick Start](https://tom-byte-sys.github.io/OpenPollen/docs/en/guide/quickstart)
+- [Architecture](https://tom-byte-sys.github.io/OpenPollen/docs/en/guide/architecture)
+- [Channels](https://tom-byte-sys.github.io/OpenPollen/docs/en/channels/webchat) — WebChat / DingTalk / Feishu (Lark)
+- [Skills](https://tom-byte-sys.github.io/OpenPollen/docs/en/skills/overview)
+- [Configuration](https://tom-byte-sys.github.io/OpenPollen/docs/en/reference/config)
+
+Preview docs locally:
+
+```bash
+cd docs-site && npx vitepress dev
 ```
 
 ## Skill System

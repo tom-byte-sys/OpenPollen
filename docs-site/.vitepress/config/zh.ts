@@ -62,6 +62,7 @@ function sidebar(): DefaultTheme.Sidebar {
         items: [
           { text: 'WebChat', link: '/zh/channels/webchat' },
           { text: '钉钉', link: '/zh/channels/dingtalk' },
+          { text: '飞书', link: '/zh/channels/feishu' },
         ],
       },
     ],

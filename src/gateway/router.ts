@@ -100,26 +100,29 @@ export class MessageRouter {
     );
 
     try {
-      if (session.sdkSessionId) {
+      // 先从 memory 获取 sdkSessionId（session 对象上可能没有，因为只在 runner 运行时设置）
+      const sdkSessionId = session.sdkSessionId
+        || await this.memory.get('sdk-sessions', session.channelId)
+        || null;
+
+      if (sdkSessionId) {
         // 归档当前 sdkSessionId 到会话历史
         const historyNamespace = `sdk-session-history:${session.userId}`;
-        const existing = await this.memory.get(historyNamespace, session.sdkSessionId);
-        if (existing) {
-          // 已有历史记录，保留原始数据（lastActiveAt 已由 runner 维护）
-        } else {
+        const existing = await this.memory.get(historyNamespace, sdkSessionId);
+        if (!existing) {
           // 首次归档（理论上 runner 已自动创建，此处作为兜底）
           const entry = {
-            sdkSessionId: session.sdkSessionId,
+            sdkSessionId,
             createdAt: session.createdAt,
             lastActiveAt: session.lastActiveAt,
             preview: '',
           };
-          await this.memory.set(historyNamespace, session.sdkSessionId, JSON.stringify(entry));
+          await this.memory.set(historyNamespace, sdkSessionId, JSON.stringify(entry));
         }
-
-        // 删除当前活跃记录
-        await this.memory.delete('sdk-sessions', session.channelId);
       }
+
+      // 始终删除活跃记录（即使 sdkSessionId 为空也要确保清理干净）
+      await this.memory.delete('sdk-sessions', session.channelId);
 
       // 从 SessionManager 中删除当前 Session
       this.sessionManager.remove(session.id);

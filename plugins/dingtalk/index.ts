@@ -221,9 +221,10 @@ export default class DingtalkPlugin implements ChannelPlugin {
     } catch (error) {
       log.error({ error, messageId: message.id }, '处理消息或回复失败');
 
-      // 尝试通过 webhook 发送错误提示
+      // 尝试通过 webhook 发送错误提示，使用实际的错误信息
       if (webhookUrl) {
-        await this.replyViaWebhook(webhookUrl, '处理消息时出错，请稍后重试。').catch(() => {
+        const errText = error instanceof Error ? error.message : '处理消息时出错，请稍后重试。';
+        await this.replyViaWebhook(webhookUrl, `⚠ ${errText}`).catch(() => {
           // ignore error notification failure
         });
       }

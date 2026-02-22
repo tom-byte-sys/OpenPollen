@@ -44,6 +44,7 @@
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.42",
     "@clack/prompts": "^1.0.1",
+    "@larksuiteoapi/node-sdk": "^1.59.0",
     "@sinclair/typebox": "^0.34.0",
     "commander": "^13.0.0",
     "dingtalk-stream": "^2.1.4",

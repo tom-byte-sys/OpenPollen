@@ -441,7 +441,7 @@ export class AgentRunner {
    */
   private humanizeError(errMsg: string): string {
     if (errMsg.includes('exited with code 1')) {
-      return 'AI 模型调用失败，可能是 API Key 无效或已过期，请检查配置。';
+      return 'AI 模型调用失败，请稍后重试。如果持续出现，请检查 API 配置。';
     }
     if (errMsg.includes('ECONNREFUSED') || errMsg.includes('ENOTFOUND')) {
       return 'AI 服务连接失败，请检查网络连接和服务地址配置。';

@@ -43,6 +43,7 @@ function sidebar(): DefaultTheme.Sidebar {
         items: [
           { text: 'WebChat', link: '/en/channels/webchat' },
           { text: 'DingTalk', link: '/en/channels/dingtalk' },
+          { text: 'Feishu (Lark)', link: '/en/channels/feishu' },
         ],
       },
     ],
