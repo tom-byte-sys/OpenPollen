@@ -1,4 +1,4 @@
-# 飞书接入
+# 飞书（Lark）接入
 
 OpenPollen 通过插件支持飞书 Bot，使用 WebSocket 长连接模式接收事件，无需公网 IP。
 
