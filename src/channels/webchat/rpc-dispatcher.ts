@@ -218,6 +218,13 @@ export class RpcDispatcher {
           this.deps.memory,
         );
 
+      // --- Nodes / Devices (stubs) ---
+      case 'node.list':
+        return okResponse(id, { nodes: [] });
+
+      case 'device.pair.list':
+        return okResponse(id, { devices: [] });
+
       // --- Fallback ---
       default:
         log.warn({ method }, 'Unknown RPC method');
