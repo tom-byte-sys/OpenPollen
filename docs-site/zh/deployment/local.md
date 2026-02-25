@@ -154,6 +154,40 @@ OpenPollen/
 }
 ```
 
+### Claude Code 配置冲突
+
+如果 WebChat 发送消息后无响应，且日志中出现 `Claude Code process exited with code 1` 或 `ConnectionRefused`，很可能是 Claude Code 自身的配置文件覆盖了 OpenPollen 传入的环境变量。
+
+**排查步骤：**
+
+检查 Claude Code 的全局配置文件：
+
+- **macOS / Linux**: `~/.claude/settings.json`
+- **Windows**: `C:\Users\<用户名>\.claude\settings.json`
+
+如果文件中存在 `env` 字段，例如：
+
+```json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:8045",
+    "ANTHROPIC_API_KEY": "sk-..."
+  }
+}
+```
+
+Claude Code 会**优先使用 settings.json 中的配置**，忽略 OpenPollen 通过环境变量传入的代理地址和密钥，导致连接到错误的地址。
+
+**解决方法：**
+
+清除 settings.json 中的 `env` 字段，改为空对象：
+
+```json
+{}
+```
+
+或者只删除其中与 `ANTHROPIC_` 相关的条目。清除后重启 OpenPollen 即可。
+
 ### 日志查看
 
 ```bash

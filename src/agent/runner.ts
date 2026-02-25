@@ -141,7 +141,7 @@ export class AgentRunner {
       },
       stderr: (data: string) => {
         if (data.trim()) {
-          log.debug({ sessionId: session.id, stderr: data.trim() }, 'SDK stderr');
+          log.warn({ sessionId: session.id, stderr: data.trim() }, 'SDK stderr');
         }
       },
     };
@@ -360,9 +360,9 @@ export class AgentRunner {
     const { providers } = this.config;
     const env: Record<string, string> = {};
 
-    // beelive 平台（新配置名）
+    // beelive 平台（新配置名）— 使用 ANTHROPIC_AUTH_TOKEN 配合自定义网关
     if (providers.beelive?.enabled && providers.beelive.apiKey) {
-      env['ANTHROPIC_API_KEY'] = providers.beelive.apiKey;
+      env['ANTHROPIC_AUTH_TOKEN'] = providers.beelive.apiKey;
       env['ANTHROPIC_BASE_URL'] = providers.beelive.baseUrl || BEELIVE_PROXY_URL;
       log.info('使用 Beelive 聚合平台');
       return env;

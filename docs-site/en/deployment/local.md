@@ -154,6 +154,40 @@ If you can't access Anthropic API directly from China, configure the Beelive pro
 }
 ```
 
+### Claude Code Settings Conflict
+
+If WebChat shows no response after sending a message, and the log contains `Claude Code process exited with code 1` or `ConnectionRefused`, Claude Code's own config file may be overriding the environment variables set by OpenPollen.
+
+**How to diagnose:**
+
+Check Claude Code's global settings file:
+
+- **macOS / Linux**: `~/.claude/settings.json`
+- **Windows**: `C:\Users\<username>\.claude\settings.json`
+
+If the file contains an `env` field like:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:8045",
+    "ANTHROPIC_API_KEY": "sk-..."
+  }
+}
+```
+
+Claude Code will **prioritize settings.json over environment variables**, ignoring the proxy URL and API key configured by OpenPollen. This causes it to connect to the wrong address.
+
+**Solution:**
+
+Clear the `env` field in settings.json:
+
+```json
+{}
+```
+
+Or remove only the `ANTHROPIC_`-related entries. Restart OpenPollen after making changes.
+
 ### Viewing Logs
 
 ```bash
