@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, symlinkSync, readlinkSync } from 'node:fs';
 import { resolve, join } from 'node:path';
+import { homedir } from 'node:os';
 import { getLogger } from '../utils/logger.js';
 import type { Session } from '../gateway/session.js';
 import type { AppConfig } from '../config/schema.js';
@@ -395,7 +396,7 @@ export class AgentRunner {
    * 结构：~/.openpollen/sdk-workspace/.claude/skills/ -> 实际技能目录
    */
   private async ensureSDKWorkspace(skillsDir: string): Promise<string> {
-    const workspaceDir = resolve(process.env.HOME ?? '/tmp', '.openpollen', 'sdk-workspace');
+    const workspaceDir = resolve(homedir(), '.openpollen', 'sdk-workspace');
     const dotClaudeDir = join(workspaceDir, '.claude');
     const dotClaudeSkillsDir = join(dotClaudeDir, 'skills');
 
