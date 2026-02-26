@@ -88,6 +88,15 @@ openpollen skill create my-skill         # 创建新技能
 
 参见 [openpollen.json.example](./openpollen.json.example) 了解完整配置项。
 
+### 模型来源说明
+
+初始化时选择「云端托管」会默认通过 OpenPollen 官方代理转发 API 请求，方便国内用户开箱即用。你也可以随时切换为其他方式：
+
+- **自有 API Key** — 在 `providers.anthropic` 中填入你的 Anthropic API Key，直连官方 API
+- **本地模型** — 启用 `providers.ollama`，使用本地部署的 Ollama 模型，数据完全不出本机
+
+所有网络请求行为均可在配置文件中查看和修改，不存在隐式的数据收集。
+
 ## 开发
 
 ```bash

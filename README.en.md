@@ -88,6 +88,15 @@ Configuration file `openpollen.json` (JSON5 format) supports `${ENV_VAR}` enviro
 
 See [openpollen.json.example](./openpollen.json.example) for the full list of configuration options.
 
+### Model Provider Options
+
+When you choose "Cloud Hosting" during initialization, API requests are routed through the OpenPollen official proxy by default for ease of use. You can switch to other providers at any time:
+
+- **Your Own API Key** — Set your Anthropic API Key in `providers.anthropic` to connect directly to the official API
+- **Local Models** — Enable `providers.ollama` to use locally deployed Ollama models, keeping all data on your machine
+
+All network requests are fully transparent and configurable — no implicit data collection.
+
 ## Development
 
 ```bash
