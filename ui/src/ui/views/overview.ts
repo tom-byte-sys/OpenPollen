@@ -251,25 +251,6 @@ export function renderOverview(props: OverviewProps) {
       </div>
     </section>
 
-    <section class="card" style="margin-top: 18px;">
-      <div class="card-title">${t('overview.notes')}</div>
-      <div class="card-sub">${t('overview.notesSub')}</div>
-      <div class="note-grid" style="margin-top: 14px;">
-        <div>
-          <div class="note-title">${t('overview.tailscaleServe')}</div>
-          <div class="muted">
-            ${t('overview.tailscaleSub')}
-          </div>
-        </div>
-        <div>
-          <div class="note-title">${t('overview.sessionHygiene')}</div>
-          <div class="muted">${t('overview.sessionHygieneSub')}</div>
-        </div>
-        <div>
-          <div class="note-title">${t('overview.cronReminders')}</div>
-          <div class="muted">${t('overview.cronRemindersSub')}</div>
-        </div>
-      </div>
-    </section>
+    <!-- Notes section hidden: Tailscale/Session/Cron features not yet implemented -->
   `;
 }

@@ -97,7 +97,7 @@ Beelive cloud proxy (recommended for China users).
 |-------|------|---------|-------------|
 | `enabled` | boolean | `false` | Enable |
 | `apiKey` | string | — | Beelive API Key |
-| `baseUrl` | string | `https://api.openpollen.dev/api/v1/anthropic-proxy` | Proxy URL |
+| `baseUrl` | string | `https://lite.beebywork.com/api/v1/anthropic-proxy` | Proxy URL |
 
 ### providers.anthropic
 
@@ -161,7 +161,7 @@ Skills marketplace configuration.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `apiUrl` | string | `https://api.openpollen.dev/api/v1/skills-market` | Marketplace API URL |
+| `apiUrl` | string | `https://lite.beebywork.com/api/v1/skills-market` | Marketplace API URL |
 
 ## Full Example
 

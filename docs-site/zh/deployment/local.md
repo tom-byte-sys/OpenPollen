@@ -148,7 +148,7 @@ OpenPollen/
     "beelive": {
       "enabled": true,
       "apiKey": "your-beelive-key",
-      "baseUrl": "https://api.openpollen.dev/api/v1/anthropic-proxy"
+      "baseUrl": "https://lite.beebywork.com/api/v1/anthropic-proxy"
     }
   }
 }

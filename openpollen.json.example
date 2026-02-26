@@ -17,7 +17,7 @@
     "port": 18800,
     "auth": {
       "mode": "none",      // "api-key" | "jwt" | "none"
-      "backendUrl": "https://api.openpollen.dev/api/v1"
+      "backendUrl": "https://lite.beebywork.com/api/v1"
     },
     "session": {
       "timeoutMinutes": 30,
@@ -102,7 +102,7 @@
     "beelive": {
       "enabled": false,
       "apiKey": "${BEELIVE_API_KEY}",
-      "baseUrl": "https://api.openpollen.dev/api/v1/anthropic-proxy"
+      "baseUrl": "https://lite.beebywork.com/api/v1/anthropic-proxy"
     },
     "anthropic": {
       "enabled": true,
@@ -136,6 +136,6 @@
   },
 
   "marketplace": {
-    "apiUrl": "https://api.openpollen.dev/api/v1/skills-market"
+    "apiUrl": "https://lite.beebywork.com/api/v1/skills-market"
   }
 }
