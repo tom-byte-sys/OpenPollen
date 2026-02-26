@@ -188,6 +188,10 @@ Clear the `env` field in settings.json:
 
 Or remove only the `ANTHROPIC_`-related entries. Restart OpenPollen after making changes.
 
+### Invalid Channel Credentials
+
+If you enable a channel (DingTalk, Feishu, etc.) during initialization but enter invalid credentials, that channel will fail to start. Since v0.1.9, a single channel failure no longer prevents the entire service from starting — the log will show `插件启动失败，已跳过` (plugin startup failed, skipped). To disable an unused channel, set its `enabled` to `false` in the config file.
+
 ### Viewing Logs
 
 ```bash

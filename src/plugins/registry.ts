@@ -54,8 +54,7 @@ export class PluginRegistry {
         await plugin.start();
         log.info({ plugin: key }, '插件已启动');
       } catch (error) {
-        log.error({ plugin: key, error }, '插件启动失败');
-        throw error;
+        log.error({ plugin: key, error }, '插件启动失败，已跳过');
       }
     }
   }
