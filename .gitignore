@@ -44,3 +44,8 @@ website/
 docs-site/node_modules/
 docs-site/.vitepress/cache/
 docs-site/.vitepress/dist/
+
+# Demo recording scripts (only keep the GIF output)
+docs/demo-sim.sh
+docs/demo.tape
+docs/demo.webm
