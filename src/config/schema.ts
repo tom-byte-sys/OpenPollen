@@ -151,7 +151,6 @@ export const ProviderSchema = Type.Object({
 export const ProvidersConfigSchema = Type.Object({
   beelive: Type.Optional(ProviderSchema),
   anthropic: Type.Optional(ProviderSchema),
-  openai: Type.Optional(ProviderSchema),
   ollama: Type.Optional(ProviderSchema),
 });
 

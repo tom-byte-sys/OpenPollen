@@ -4,10 +4,10 @@
  * and skips sending. The Runner still completes but results are discarded.
  */
 export class AbortManager {
-  private runs = new Map<string, { aborted: boolean; buffer: string; sessionKey: string }>();
+  private runs = new Map<string, { aborted: boolean; buffer: string; sessionKey: string; controller?: AbortController }>();
 
-  register(runId: string, sessionKey: string): void {
-    this.runs.set(runId, { aborted: false, buffer: '', sessionKey });
+  register(runId: string, sessionKey: string, controller?: AbortController): void {
+    this.runs.set(runId, { aborted: false, buffer: '', sessionKey, controller });
   }
 
   isAborted(runId: string): boolean {
@@ -25,6 +25,7 @@ export class AbortManager {
     const entry = this.runs.get(runId);
     if (!entry) return null;
     entry.aborted = true;
+    entry.controller?.abort();
     return { buffer: entry.buffer };
   }
 
@@ -34,6 +35,7 @@ export class AbortManager {
     for (const [runId, entry] of this.runs) {
       if (entry.sessionKey === sessionKey && !entry.aborted) {
         entry.aborted = true;
+        entry.controller?.abort();
         aborted.push(runId);
       }
     }

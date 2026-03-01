@@ -1095,8 +1095,11 @@ export type Translations = {
   'config.reloadLabel': string;
   'config.savingLabel': string;
   'config.applyingLabel': string;
-  'config.updatingLabel': string;
-  'config.update': string;
+  'config.reloadTip': string;
+  'config.saveTip': string;
+  'config.applyTip': string;
+  'config.savedSuccess': string;
+  'config.appliedSuccess': string;
   'config.viewPendingChanges': string;
   'config.loadingSchemaLabel': string;
   'config.formUnsafe': string;

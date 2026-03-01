@@ -94,7 +94,6 @@ export function handleConfigSchema(reqId: string): ResponseFrame {
     '/properties/channels/properties/wechat/properties/encodingAESKey',
     '/properties/providers/properties/beelive/properties/apiKey',
     '/properties/providers/properties/anthropic/properties/apiKey',
-    '/properties/providers/properties/openai/properties/apiKey',
     '/properties/providers/properties/ollama/properties/apiKey',
   ];
 
@@ -119,7 +118,7 @@ export function handleConfigSchema(reqId: string): ResponseFrame {
     'agent.fallbackModel': { label: '备选模型' },
     'agent.maxTurns': { label: '最大轮次', help: '单次对话最大交互轮数' },
     'agent.maxBudgetUsd': { label: '预算上限 (USD)', help: '单次对话最大花费' },
-    'agent.systemPrompt': { label: '系统提示词' },
+    'agent.systemPrompt': { label: '系统提示词', help: '留空则使用 Claude Code 内置的默认提示词，填写后会追加到默认提示词之后' },
 
     // 网关
     'gateway.host': { label: '监听地址' },
@@ -154,8 +153,10 @@ export function handleConfigSchema(reqId: string): ResponseFrame {
 
     // 提供商
     'providers.beelive': { label: 'Beelive' },
+    'providers.beelive.baseUrl': { label: '接口地址', help: '留空则使用默认 Beelive 代理地址' },
+    'providers.beelive.model': { label: '模型', help: '留空则使用智能体配置中的模型（默认 claude-sonnet-4-20250514）' },
     'providers.anthropic': { label: 'Anthropic' },
-    'providers.openai': { label: 'OpenAI' },
+    'providers.anthropic.baseUrl': { label: '接口地址', help: '留空则使用 Anthropic 官方地址' },
     'providers.ollama': { label: 'Ollama' },
 
     // 技能

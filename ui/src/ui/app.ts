@@ -171,7 +171,8 @@ export class OpenPollenApp extends LitElement {
   @state() configIssues: unknown[] = [];
   @state() configSaving = false;
   @state() configApplying = false;
-  @state() updateRunning = false;
+  @state() configSavedSuccess = false;
+  @state() configAppliedSuccess = false;
   @state() applySessionKey = this.settings.lastActiveSessionKey;
   @state() configSnapshot: ConfigSnapshot | null = null;
   @state() configSchema: unknown = null;

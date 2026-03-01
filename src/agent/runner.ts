@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, symlinkSync, readlinkSync } from 'node:fs';
+import { existsSync, mkdirSync, symlinkSync, readlinkSync, writeFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { homedir } from 'node:os';
 import { getLogger } from '../utils/logger.js';
@@ -6,6 +6,7 @@ import type { Session } from '../gateway/session.js';
 import type { AppConfig } from '../config/schema.js';
 import type { MemoryStore } from '../memory/interface.js';
 import { SkillManager } from './skill-manager.js';
+import type { ImageAttachment } from '../channels/interface.js';
 
 const log = getLogger('agent-runner');
 
@@ -71,7 +72,7 @@ export class AgentRunner {
   /**
    * 运行 Agent 处理用户消息
    */
-  async run(session: Session, userMessage: string, onChunk?: (text: string, type?: 'text' | 'thinking') => void): Promise<string> {
+  async run(session: Session, userMessage: string, onChunk?: (text: string, type?: 'text' | 'thinking') => void, abortController?: AbortController, attachments?: ImageAttachment[]): Promise<string> {
     log.info({
       sessionId: session.id,
       messageLength: userMessage.length,
@@ -88,7 +89,7 @@ export class AgentRunner {
       }
 
       const sdk = await this.loadSDK();
-      return await this.runWithSDK(sdk, session, userMessage, onChunk);
+      return await this.runWithSDK(sdk, session, userMessage, onChunk, abortController, attachments);
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error);
       const errStack = error instanceof Error ? error.stack : undefined;
@@ -118,7 +119,7 @@ export class AgentRunner {
     }
   }
 
-  private async runWithSDK(sdk: ClaudeAgentSDK, session: Session, userMessage: string, onChunk?: (text: string, type?: 'text' | 'thinking') => void): Promise<string> {
+  private async runWithSDK(sdk: ClaudeAgentSDK, session: Session, userMessage: string, onChunk?: (text: string, type?: 'text' | 'thinking') => void, abortController?: AbortController, attachments?: ImageAttachment[]): Promise<string> {
     const { config, skillManager } = this;
     const skillsDir = skillManager['skillsDir'];
 
@@ -126,6 +127,7 @@ export class AgentRunner {
     const sdkWorkspace = await this.ensureSDKWorkspace(skillsDir);
 
     const options: Record<string, unknown> = {
+      abortController,
       model: session.model ?? config.agent.model,
       maxTurns: config.agent.maxTurns,
       maxBudgetUsd: config.agent.maxBudgetUsd,
@@ -175,11 +177,40 @@ export class AgentRunner {
 
     log.info({ sessionId: session.id, cwd: sdkWorkspace, model: options['model'] }, '调用 Claude Agent SDK');
 
-    const result = sdk.query({ prompt: userMessage, options });
+    // 有图片附件时，保存到 SDK workspace 并在 prompt 中引导 Read 工具查看
+    let prompt = userMessage;
+    if (attachments && attachments.length > 0) {
+      const uploadsDir = join(sdkWorkspace, 'uploads');
+      if (!existsSync(uploadsDir)) {
+        mkdirSync(uploadsDir, { recursive: true });
+      }
+      const imagePaths: string[] = [];
+      for (const att of attachments) {
+        const ext = (att.mimeType || 'image/png').split('/')[1] || 'png';
+        const fileName = `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const filePath = join(uploadsDir, fileName);
+        writeFileSync(filePath, Buffer.from(att.content, 'base64'));
+        imagePaths.push(filePath);
+      }
+      const imageRefs = imagePaths.map(p => `[图片已保存到本地: ${p}，请用 Read 工具查看]`).join('\n');
+      prompt = imageRefs + (userMessage ? `\n${userMessage}` : '\n请描述图片内容。');
+    }
+
+    const result = sdk.query({ prompt, options });
     let responseText = '';
     const toolsUsed: string[] = [];
     let streamChunks = 0;
     let thinkingChunks = 0;
+
+    // 首字节超时：30 秒内无内容到达则中止
+    const FIRST_CONTENT_TIMEOUT_MS = 30_000;
+    let firstContentReceived = false;
+    const firstContentTimer = abortController ? setTimeout(() => {
+      if (!firstContentReceived) {
+        log.warn({ sessionId: session.id }, 'SDK 首字节超时，中止执行');
+        abortController.abort();
+      }
+    }, FIRST_CONTENT_TIMEOUT_MS) : undefined;
 
     for await (const message of result) {
       // 系统初始化消息
@@ -215,9 +246,17 @@ export class AgentRunner {
         if (event?.type === 'content_block_delta') {
           const delta = event.delta as Record<string, unknown> | undefined;
           if (delta?.type === 'text_delta' && typeof delta.text === 'string') {
+            if (!firstContentReceived) {
+              firstContentReceived = true;
+              if (firstContentTimer) clearTimeout(firstContentTimer);
+            }
             streamChunks++;
             onChunk(delta.text, 'text');
           } else if (delta?.type === 'thinking_delta' && typeof delta.thinking === 'string') {
+            if (!firstContentReceived) {
+              firstContentReceived = true;
+              if (firstContentTimer) clearTimeout(firstContentTimer);
+            }
             thinkingChunks++;
             onChunk(delta.thinking, 'thinking');
           }
@@ -286,6 +325,9 @@ export class AgentRunner {
         }
       }
     }
+
+    // 清理首字节超时计时器
+    if (firstContentTimer) clearTimeout(firstContentTimer);
 
     log.info({
       sessionId: session.id,
@@ -441,6 +483,12 @@ export class AgentRunner {
    * 将底层技术错误转换为用户友好的中文提示
    */
   private humanizeError(errMsg: string): string {
+    if (errMsg.includes('401') || errMsg.includes('Unauthorized') || errMsg.includes('authentication')) {
+      return 'API 密钥无效或已过期，请检查提供商配置中的密钥设置。';
+    }
+    if (errMsg.includes('aborted') || errMsg.includes('abort')) {
+      return 'AI 模型响应超时，请检查 API 配置是否正确（密钥、服务地址等）。';
+    }
     if (errMsg.includes('exited with code 1')) {
       return 'AI 模型调用失败，请稍后重试。如果持续出现，请检查 API 配置。';
     }

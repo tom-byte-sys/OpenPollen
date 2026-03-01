@@ -12,7 +12,8 @@ export type ConfigProps = {
   loading: boolean;
   saving: boolean;
   applying: boolean;
-  updating: boolean;
+  savedSuccess: boolean;
+  appliedSuccess: boolean;
   connected: boolean;
   schema: unknown;
   schemaLoading: boolean;
@@ -32,7 +33,6 @@ export type ConfigProps = {
   onReload: () => void;
   onSave: () => void;
   onApply: () => void;
-  onUpdate: () => void;
 };
 
 // SVG Icons for sidebar (Lucide-style)
@@ -476,10 +476,8 @@ export function renderConfig(props: ConfigProps) {
   const canApply =
     props.connected &&
     !props.applying &&
-    !props.updating &&
     hasChanges &&
     (props.formMode === "raw" ? true : canSaveForm);
-  const canUpdate = props.connected && !props.applying && !props.updating;
 
   return html`
     <div class="config-layout">
@@ -598,6 +596,7 @@ export function renderConfig(props: ConfigProps) {
               class="btn btn--sm"
               ?disabled=${props.loading}
               @click=${props.onReload}
+              title=${t('config.reloadTip')}
             >
               ${props.loading ? t('config.loadingLabel') : t('config.reloadLabel')}
             </button>
@@ -605,22 +604,17 @@ export function renderConfig(props: ConfigProps) {
               class="btn btn--sm primary"
               ?disabled=${!canSave}
               @click=${props.onSave}
+              title=${t('config.saveTip')}
             >
-              ${props.saving ? t('config.savingLabel') : t('common.save')}
+              ${props.saving ? t('config.savingLabel') : props.savedSuccess ? t('config.savedSuccess') : t('common.save')}
             </button>
             <button
               class="btn btn--sm"
               ?disabled=${!canApply}
               @click=${props.onApply}
+              title=${t('config.applyTip')}
             >
-              ${props.applying ? t('config.applyingLabel') : t('common.apply')}
-            </button>
-            <button
-              class="btn btn--sm"
-              ?disabled=${!canUpdate}
-              @click=${props.onUpdate}
-            >
-              ${props.updating ? t('config.updatingLabel') : t('config.update')}
+              ${props.applying ? t('config.applyingLabel') : props.appliedSuccess ? t('config.appliedSuccess') : t('common.apply')}
             </button>
           </div>
         </div>

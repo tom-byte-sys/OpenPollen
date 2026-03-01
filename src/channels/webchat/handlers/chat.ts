@@ -16,6 +16,7 @@ export interface ChatSendParams {
   idempotencyKey?: string;
   thinking?: string;
   timeoutMs?: number;
+  attachments?: Array<{ mimeType: string; content: string }>;
 }
 
 export function handleChatSend(
@@ -29,8 +30,9 @@ export function handleChatSend(
 ): ResponseFrame {
   // Validate params — UI sends message as a plain string
   const userText = typeof params?.message === 'string' ? params.message.trim() : '';
-  if (!userText) {
-    return errorResponse(reqId, 'BAD_PARAMS', 'message is required');
+  const attachments = Array.isArray(params?.attachments) ? params.attachments : [];
+  if (!userText && attachments.length === 0) {
+    return errorResponse(reqId, 'BAD_PARAMS', 'message or attachments required');
   }
 
   const runId = params.idempotencyKey || randomUUID();
@@ -39,8 +41,10 @@ export function handleChatSend(
   // Detect session-reset commands — don't persist these in chat history
   const isResetCommand = /^\/(new|reset)\b/i.test(userText);
 
+  const controller = new AbortController();
+
   // Register this run for abort tracking
-  abortManager.register(runId, sessionKey);
+  abortManager.register(runId, sessionKey, controller);
 
   // Store user message (skip for /new and /reset commands)
   if (!isResetCommand) {
@@ -64,6 +68,7 @@ export function handleChatSend(
     senderName: userId,
     conversationType: 'dm',
     content: { type: 'text', text: userText },
+    attachments: attachments.length > 0 ? attachments : undefined,
     timestamp: Date.now(),
   };
 
@@ -83,7 +88,7 @@ export function handleChatSend(
         abortManager.appendBuffer(runId, stream.getBuffer());
       };
 
-      await router.handleMessage(inbound, onChunk);
+      await router.handleMessage(inbound, onChunk, controller);
 
       if (abortManager.isAborted(runId)) {
         stream.sendAborted();

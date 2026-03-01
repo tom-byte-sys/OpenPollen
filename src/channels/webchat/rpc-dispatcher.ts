@@ -126,10 +126,6 @@ export class RpcDispatcher {
           this.deps.reloadConfig,
         );
 
-      // --- Update ---
-      case 'update.run':
-        return okResponse(id, { message: '自动更新功能暂未开放' });
-
       // --- Debug ---
       case 'models.list':
         return handleModelsList(id, this.deps.appConfig);

@@ -33,7 +33,6 @@ function createState(): ConfigState {
     configValid: null,
     connected: false,
     lastError: null,
-    updateRunning: false,
   };
 }
 

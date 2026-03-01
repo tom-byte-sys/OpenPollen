@@ -6,6 +6,11 @@ export interface MessageContent {
   fileName?: string;
 }
 
+export interface ImageAttachment {
+  mimeType: string;
+  content: string; // base64
+}
+
 export interface InboundMessage {
   id: string;
   channelType: string;
@@ -15,6 +20,7 @@ export interface InboundMessage {
   conversationType: 'dm' | 'group';
   groupId?: string;
   content: MessageContent;
+  attachments?: ImageAttachment[];
   timestamp: number;
   raw?: unknown;
 }

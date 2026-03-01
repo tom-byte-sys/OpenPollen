@@ -20,7 +20,6 @@ export type ConfigState = {
   configIssues: unknown[];
   configSaving: boolean;
   configApplying: boolean;
-  updateRunning: boolean;
   configSnapshot: ConfigSnapshot | null;
   configSchema: unknown;
   configSchemaVersion: string | null;
@@ -31,6 +30,8 @@ export type ConfigState = {
   configFormDirty: boolean;
   configFormMode: "form" | "raw";
   configSearchQuery: string;
+  configSavedSuccess: boolean;
+  configAppliedSuccess: boolean;
   configActiveSection: string | null;
   configActiveSubsection: string | null;
   lastError: string | null;
@@ -142,6 +143,8 @@ export async function saveConfig(state: ConfigState) {
     }
     await state.client.request("config.set", { raw, baseHash });
     state.configFormDirty = false;
+    state.configSavedSuccess = true;
+    setTimeout(() => { state.configSavedSuccess = false; }, 2000);
     await loadConfig(state);
   } catch (err) {
     state.lastError = String(err);
@@ -169,28 +172,13 @@ export async function applyConfig(state: ConfigState) {
       sessionKey: state.applySessionKey,
     });
     state.configFormDirty = false;
+    state.configAppliedSuccess = true;
+    setTimeout(() => { state.configAppliedSuccess = false; }, 2000);
     await loadConfig(state);
   } catch (err) {
     state.lastError = String(err);
   } finally {
     state.configApplying = false;
-  }
-}
-
-export async function runUpdate(state: ConfigState) {
-  if (!state.client || !state.connected) {
-    return;
-  }
-  state.updateRunning = true;
-  state.lastError = null;
-  try {
-    await state.client.request("update.run", {
-      sessionKey: state.applySessionKey,
-    });
-  } catch (err) {
-    state.lastError = String(err);
-  } finally {
-    state.updateRunning = false;
   }
 }
 

@@ -38,7 +38,7 @@ export class MessageRouter {
   /**
    * 处理入站消息：查找/创建会话 → 路由到 Agent
    */
-  async handleMessage(message: InboundMessage, onChunk?: (text: string, type?: 'text' | 'thinking') => void): Promise<string> {
+  async handleMessage(message: InboundMessage, onChunk?: (text: string, type?: 'text' | 'thinking') => void, abortController?: AbortController): Promise<string> {
     // 检测命令
     const trimmed = (message.content.text ?? '').trim();
     if (trimmed === '/new') return this.handleNewSession(message);
@@ -69,11 +69,11 @@ export class MessageRouter {
       }, '路由消息到 Agent');
 
       const userText = message.content.text ?? '';
-      if (!userText.trim()) {
+      if (!userText.trim() && !message.attachments?.length) {
         return '请发送文本消息';
       }
 
-      const response = await this.agentRunner.run(session, userText, onChunk);
+      const response = await this.agentRunner.run(session, userText, onChunk, abortController, message.attachments);
 
       // Layer 2: 存储对话摘要到用户命名空间
       await this.storeConversationSummary(message.senderId, userText, response);

@@ -298,7 +298,6 @@ program
       options: [
         { value: 'cloud', label: 'OpenPollen Cloud', hint: '官方云服务，开箱即用' },
         { value: 'anthropic', label: 'Anthropic', hint: '使用自有 Claude API Key' },
-        { value: 'openai', label: 'OpenAI', hint: '使用自有 OpenAI API Key' },
         { value: 'ollama', label: '本地模型 (Ollama)', hint: '离线运行，完全私有' },
         { value: 'compatible', label: '其他兼容模型', hint: 'DeepSeek / Kimi / GLM 等' },
       ],
@@ -329,10 +328,6 @@ program
       const apiKey = await p.text({ message: '输入你的 Anthropic API Key', validate: (v) => !v ? 'API Key 不能为空' : undefined });
       if (p.isCancel(apiKey)) { p.cancel('已取消'); process.exit(0); }
       providers['anthropic'] = { enabled: true, apiKey };
-    } else if (providerChoice === 'openai') {
-      const apiKey = await p.text({ message: '输入你的 OpenAI API Key', validate: (v) => !v ? 'API Key 不能为空' : undefined });
-      if (p.isCancel(apiKey)) { p.cancel('已取消'); process.exit(0); }
-      providers['openai'] = { enabled: true, apiKey };
     } else if (providerChoice === 'ollama') {
       const baseUrl = await p.text({ message: 'Ollama 地址', defaultValue: 'http://localhost:11434' });
       if (p.isCancel(baseUrl)) { p.cancel('已取消'); process.exit(0); }
@@ -519,7 +514,6 @@ program
     const providerNames: Record<string, string> = {
       beelive: 'OpenPollen Cloud',
       anthropic: 'Anthropic',
-      openai: 'OpenAI',
       ollama: 'Ollama',
     };
     const activeProviders = Object.keys(providers).map(k => providerNames[k] || k);
@@ -1093,16 +1087,7 @@ modelCmd
         if (ol.model) console.log(`    模型: ${ol.model}`);
       }
 
-      // OpenAI
-      if (providers.openai) {
-        const oi = providers.openai;
-        const status = oi.enabled ? (oi.apiKey ? 'OK' : '缺少 API Key') : '未启用';
-        console.log(`  OpenAI`);
-        console.log(`    状态: ${status}`);
-        if (oi.apiKey) console.log(`    API Key: ${maskSecret(oi.apiKey)}`);
-      }
-
-      if (!providers.beelive && !providers.anthropic && !providers.ollama && !providers.openai) {
+      if (!providers.beelive && !providers.anthropic && !providers.ollama) {
         console.log('  (无) 请运行 `openpollen init` 配置 Provider。');
       }
 

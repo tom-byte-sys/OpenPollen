@@ -13,7 +13,6 @@ import { loadChatHistory } from "./controllers/chat.ts";
 import {
   applyConfig,
   loadConfig,
-  runUpdate,
   saveConfig,
   updateConfigFormValue,
   removeConfigFormValue,
@@ -955,7 +954,8 @@ export function renderApp(state: AppViewState) {
                 loading: state.configLoading,
                 saving: state.configSaving,
                 applying: state.configApplying,
-                updating: state.updateRunning,
+                savedSuccess: state.configSavedSuccess,
+                appliedSuccess: state.configAppliedSuccess,
                 connected: state.connected,
                 schema: state.configSchema,
                 schemaLoading: state.configSchemaLoading,
@@ -980,7 +980,6 @@ export function renderApp(state: AppViewState) {
                 onReload: () => loadConfig(state),
                 onSave: () => saveConfig(state),
                 onApply: () => applyConfig(state),
-                onUpdate: () => runUpdate(state),
               })
             : nothing
         }
