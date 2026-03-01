@@ -1,6 +1,6 @@
 {
   "name": "openpollen",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "安全、易用、可扩展的开源 AI Agent 框架",
   "type": "module",
   "main": "dist/index.js",
@@ -15,7 +15,10 @@
     "lint": "eslint src/ cli/ plugins/",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "release": "bash scripts/release.sh",
+    "release:minor": "bash scripts/release.sh minor",
+    "release:major": "bash scripts/release.sh major"
   },
   "keywords": [
     "ai",
