@@ -4,6 +4,10 @@
 
 [English](./README.en.md) | [文档](https://tom-byte-sys.github.io/OpenPollen/zh/guide/introduction)
 
+<p align="center">
+  <img src="docs/demo.gif" alt="OpenPollen Demo" width="800">
+</p>
+
 OpenPollen 是一个开源的多平台 AI Agent 框架，基于 Claude Agent SDK 构建。支持钉钉、飞书、企业微信等聊天平台接入，通过 SKILL.md（Agent Skills 开放标准）实现技能的安装、发现和执行。
 
 ## 特性

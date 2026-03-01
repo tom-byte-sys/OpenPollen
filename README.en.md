@@ -4,6 +4,10 @@
 
 [中文](./README.md) | [Documentation](https://tom-byte-sys.github.io/OpenPollen/en/guide/introduction)
 
+<p align="center">
+  <img src="docs/demo.gif" alt="OpenPollen Demo" width="800">
+</p>
+
 OpenPollen is an open-source multi-platform AI Agent framework built on Claude Agent SDK. It supports integration with chat platforms like DingTalk, Feishu (Lark), WeCom, and more. Skills are defined using SKILL.md (Agent Skills open standard) for easy installation, discovery, and execution.
 
 ## Features
