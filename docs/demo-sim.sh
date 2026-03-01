@@ -92,6 +92,8 @@ echo -e "  ${GREEN}✔${NC} 技能已加载: ${CYAN}code-review${NC}, ${CYAN}dat
 sleep 0.4
 echo -e "  ${GREEN}✔${NC} 钉钉渠道已连接"
 sleep 0.4
+echo -e "  ${GREEN}✔${NC} 飞书渠道已连接"
+sleep 0.4
 echo -e "  ${GREEN}✔${NC} WebChat 已启动"
 sleep 0.5
 
@@ -132,5 +134,69 @@ sleep 0.15
 echo -e "  ${DIM}    right = [x for x in arr if x > pivot]${NC}"
 sleep 0.15
 echo -e "  ${DIM}    return quicksort(left) + mid + quicksort(right)${NC}"
+echo -e ""
+sleep 2
+
+# ── 钉钉消息到达 ──────────────────────────────────────
+BLUE='\033[0;34m'
+MAGENTA='\033[0;35m'
+TS_DT="$(date +%H:%M:%S)"
+
+echo -e "  ${DIM}────────────────────────────────────────${NC}"
+echo -e ""
+echo -e "  ${BLUE}📌 钉钉消息:${NC}"
+echo -e ""
+sleep 0.5
+
+echo -e "  ${DIM}${TS_DT}${NC} ${BLUE}[dingtalk]${NC} 收到消息 ${DIM}from${NC} ${BOLD}张三${NC} ${DIM}(group: 技术部)${NC}"
+sleep 0.5
+echo -e "  ${BOLD}张三:${NC} 帮我审查一下 main.py 的代码"
+sleep 1
+
+echo -ne "  ${BOLD}${CYAN}Agent:${NC} "
+sleep 0.3
+echo "我来审查 main.py 的代码。"
+sleep 0.2
+echo -e "  ${DIM}[调用技能: code-review]${NC}"
+sleep 0.8
+echo -e "  发现 3 个问题："
+sleep 0.2
+echo -e "  ${DIM}1. 第 42 行: 未处理的异常，建议添加 try-except${NC}"
+sleep 0.15
+echo -e "  ${DIM}2. 第 78 行: 变量命名不规范 (a → user_count)${NC}"
+sleep 0.15
+echo -e "  ${DIM}3. 第 103 行: SQL 拼接存在注入风险，建议用参数化查询${NC}"
+sleep 0.3
+echo -e "  ${DIM}${TS_DT}${NC} ${GREEN}[dingtalk]${NC} 回复已发送 → ${BOLD}技术部${NC}"
+echo -e ""
+sleep 1.5
+
+# ── 飞书消息到达 ──────────────────────────────────────
+TS_FS="$(date +%H:%M:%S)"
+
+echo -e "  ${MAGENTA}🔖 飞书消息:${NC}"
+echo -e ""
+sleep 0.5
+
+echo -e "  ${DIM}${TS_FS}${NC} ${MAGENTA}[feishu]${NC} 收到消息 ${DIM}from${NC} ${BOLD}李四${NC} ${DIM}(dm)${NC}"
+sleep 0.5
+echo -e "  ${BOLD}李四:${NC} 分析一下上周的销售数据趋势"
+sleep 1
+
+echo -ne "  ${BOLD}${CYAN}Agent:${NC} "
+sleep 0.3
+echo "好的，我来分析上周的销售数据。"
+sleep 0.2
+echo -e "  ${DIM}[调用技能: data-analyst]${NC}"
+sleep 0.8
+echo -e "  上周销售数据分析："
+sleep 0.2
+echo -e "  ${DIM}• 总销售额 ¥128,500，环比增长 12.3%${NC}"
+sleep 0.15
+echo -e "  ${DIM}• 周三达到峰值 ¥24,800${NC}"
+sleep 0.15
+echo -e "  ${DIM}• 华东地区贡献最大（占比 45%）${NC}"
+sleep 0.3
+echo -e "  ${DIM}${TS_FS}${NC} ${GREEN}[feishu]${NC} 回复已发送 → ${BOLD}李四${NC}"
 echo -e ""
 sleep 3

@@ -14,4 +14,4 @@ Set Theme "Catppuccin Mocha"
 Sleep 500ms
 Type "bash docs/demo-sim.sh"
 Enter
-Sleep 30s
+Sleep 55s
