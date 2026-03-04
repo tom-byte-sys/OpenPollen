@@ -1,6 +1,6 @@
 import { createServer, type Server, type IncomingMessage, type ServerResponse } from 'node:http';
 import { join, extname } from 'node:path';
-import { readFile, stat } from 'node:fs/promises';
+import { readFile, stat, access } from 'node:fs/promises';
 import { getLogger } from '../../utils/logger.js';
 
 const log = getLogger('webchat:ui');
@@ -41,6 +41,14 @@ export interface UiServerConfig {
 export function createUiHttpServer(config: UiServerConfig): Server {
   const { uiDir, assistantName } = config;
 
+  // Check if UI directory exists at startup
+  let uiBuilt = false;
+  access(join(uiDir, 'index.html')).then(() => {
+    uiBuilt = true;
+  }).catch(() => {
+    log.warn({ uiDir }, 'WebChat UI not built. Run "npm run build:ui" or "npm run build" to build it.');
+  });
+
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     const url = req.url ?? '/';
 
@@ -51,6 +59,36 @@ export function createUiHttpServer(config: UiServerConfig): Server {
         assistantName: assistantName ?? 'OpenPollen',
         features: {},
       }));
+      return;
+    }
+
+    // If UI is not built, show a helpful error page
+    if (!uiBuilt) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(`<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>OpenPollen - UI Not Built</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#0f172a;color:#e2e8f0}
+  .card{background:#1e293b;border-radius:12px;padding:40px;max-width:520px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.3)}
+  h1{color:#60a5fa;margin-bottom:8px;font-size:1.5rem}
+  p{color:#94a3b8;line-height:1.6}
+  code{background:#334155;padding:2px 8px;border-radius:4px;font-size:.95em;color:#fbbf24}
+  .steps{text-align:left;margin:20px 0}
+  .steps li{margin:8px 0}
+</style>
+</head>
+<body><div class="card">
+  <h1>OpenPollen WebChat UI Not Built</h1>
+  <p>The server is running, but the WebChat UI assets have not been built yet.</p>
+  <div class="steps"><ol>
+    <li>Stop the server (<code>Ctrl+C</code>)</li>
+    <li>Run <code>npm run build</code></li>
+    <li>Start again with <code>openpollen start</code></li>
+  </ol></div>
+  <p>Or build only the UI: <code>npm run build:ui</code></p>
+</div></body></html>`);
       return;
     }
 
